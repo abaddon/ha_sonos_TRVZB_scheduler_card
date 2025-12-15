@@ -16,6 +16,15 @@ interface CopyScheduleDialog extends HTMLElement {
 }
 
 /**
+ * Helper to wait for multiple update cycles with longer delay
+ */
+async function waitForUpdates(dialog: CopyScheduleDialog, delay = 20): Promise<void> {
+  await dialog.updateComplete;
+  await new Promise(resolve => setTimeout(resolve, delay));
+  await dialog.updateComplete;
+}
+
+/**
  * Helper function to create a copy schedule dialog element
  */
 async function createDialog(
@@ -28,9 +37,7 @@ async function createDialog(
   dialog.sourceDay = sourceDay;
   dialog.open = open;
 
-  await dialog.updateComplete;
-  // Additional tick for rendering
-  await new Promise(resolve => setTimeout(resolve, 0));
+  await waitForUpdates(dialog);
 
   return dialog;
 }
@@ -60,8 +67,7 @@ function querySelectorAll<T extends Element>(
  */
 async function getCheckedDays(dialog: CopyScheduleDialog): Promise<DayOfWeek[]> {
   // Ensure all updates are complete
-  await dialog.updateComplete;
-  await new Promise(resolve => setTimeout(resolve, 0));
+  await waitForUpdates(dialog);
 
   const checkboxes = querySelectorAll<HTMLInputElement>(dialog, '.day-checkbox input[type="checkbox"]');
   return checkboxes
@@ -83,28 +89,28 @@ async function clickQuickSelectButton(dialog: CopyScheduleDialog, buttonText: st
   expect(button).toBeDefined();
   if (button) {
     button.click();
-    await dialog.updateComplete;
-    // Additional tick for rendering updates
-    await new Promise(resolve => setTimeout(resolve, 0));
+    await waitForUpdates(dialog);
   }
 }
 
 /**
- * Helper to toggle a day checkbox
+ * Helper to toggle a day checkbox - clicks the checkbox input directly to avoid double-toggle issues
  */
 async function toggleDay(dialog: CopyScheduleDialog, day: DayOfWeek): Promise<void> {
   const dayCheckboxes = querySelectorAll<HTMLLabelElement>(dialog, '.day-checkbox');
-  const dayCheckbox = dayCheckboxes.find(label => {
+  const dayCheckboxLabel = dayCheckboxes.find(label => {
     const labelText = label.querySelector('.day-checkbox-label')?.textContent?.trim().toLowerCase();
     return labelText === day;
   });
 
-  expect(dayCheckbox).toBeDefined();
-  if (dayCheckbox) {
-    dayCheckbox.click();
-    await dialog.updateComplete;
-    // Additional tick for rendering updates
-    await new Promise(resolve => setTimeout(resolve, 0));
+  expect(dayCheckboxLabel).toBeDefined();
+  if (dayCheckboxLabel) {
+    // Click on the checkbox input directly to avoid the double-toggle from label click + checkbox change
+    const checkbox = dayCheckboxLabel.querySelector('input[type="checkbox"]') as HTMLInputElement;
+    if (checkbox) {
+      checkbox.click();
+      await waitForUpdates(dialog);
+    }
   }
 }
 
@@ -300,6 +306,7 @@ describe('Copy Schedule Dialog Component', () => {
       const dialog = await createDialog('monday', true);
 
       await toggleDay(dialog, 'tuesday');
+      await waitForUpdates(dialog);
 
       const copyButton = querySelectorAll<HTMLButtonElement>(dialog, '.button-primary')[0];
       expect(copyButton).toBeDefined();
@@ -315,11 +322,12 @@ describe('Copy Schedule Dialog Component', () => {
       // Select some days
       await toggleDay(dialog, 'tuesday');
       await toggleDay(dialog, 'friday');
+      await waitForUpdates(dialog);
 
       // Click copy button
       const copyButton = querySelectorAll<HTMLButtonElement>(dialog, '.button-primary')[0];
       copyButton.click();
-      await dialog.updateComplete;
+      await waitForUpdates(dialog);
 
       expect(copyConfirmedSpy).toHaveBeenCalled();
       const event = copyConfirmedSpy.mock.calls[0][0] as CustomEvent;
@@ -355,7 +363,7 @@ describe('Copy Schedule Dialog Component', () => {
       // Click copy
       const copyButton = querySelectorAll<HTMLButtonElement>(dialog, '.button-primary')[0];
       copyButton.click();
-      await dialog.updateComplete;
+      await waitForUpdates(dialog);
 
       // Selection should be cleared
       checkedDays = await getCheckedDays(dialog);
@@ -374,7 +382,7 @@ describe('Copy Schedule Dialog Component', () => {
       // Click cancel
       const cancelButton = querySelectorAll<HTMLButtonElement>(dialog, '.button-secondary')[0];
       cancelButton.click();
-      await dialog.updateComplete;
+      await waitForUpdates(dialog);
 
       // Selection should be cleared
       checkedDays = await getCheckedDays(dialog);
@@ -400,12 +408,14 @@ describe('Copy Schedule Dialog Component', () => {
 
       // Select 1 day
       await toggleDay(dialog, 'tuesday');
+      await waitForUpdates(dialog);
       let copyButton = querySelectorAll<HTMLButtonElement>(dialog, '.button-primary')[0];
       expect(copyButton.textContent).toContain('1');
       expect(copyButton.textContent?.toLowerCase()).toContain('day');
 
       // Select 2 days
       await toggleDay(dialog, 'wednesday');
+      await waitForUpdates(dialog);
       copyButton = querySelectorAll<HTMLButtonElement>(dialog, '.button-primary')[0];
       expect(copyButton.textContent).toContain('2');
       expect(copyButton.textContent?.toLowerCase()).toContain('days');
@@ -531,6 +541,7 @@ describe('Copy Schedule Dialog Component', () => {
       const dialog = await createDialog('monday', true);
 
       await toggleDay(dialog, 'tuesday');
+      await waitForUpdates(dialog);
 
       const dayCheckboxes = querySelectorAll<HTMLLabelElement>(dialog, '.day-checkbox');
       const tuesdayCheckbox = dayCheckboxes.find(cb => {
@@ -546,6 +557,7 @@ describe('Copy Schedule Dialog Component', () => {
 
       // Select
       await toggleDay(dialog, 'wednesday');
+      await waitForUpdates(dialog);
       let dayCheckboxes = querySelectorAll<HTMLLabelElement>(dialog, '.day-checkbox');
       let wednesdayCheckbox = dayCheckboxes.find(cb => {
         const label = cb.querySelector('.day-checkbox-label')?.textContent?.trim().toLowerCase();
@@ -555,6 +567,7 @@ describe('Copy Schedule Dialog Component', () => {
 
       // Unselect
       await toggleDay(dialog, 'wednesday');
+      await waitForUpdates(dialog);
       dayCheckboxes = querySelectorAll<HTMLLabelElement>(dialog, '.day-checkbox');
       wednesdayCheckbox = dayCheckboxes.find(cb => {
         const label = cb.querySelector('.day-checkbox-label')?.textContent?.trim().toLowerCase();
@@ -627,9 +640,11 @@ describe('Copy Schedule Dialog Component', () => {
       dialog.addEventListener('copy-confirmed', copyConfirmedSpy);
 
       await toggleDay(dialog, 'tuesday');
+      await waitForUpdates(dialog);
 
       const copyButton = querySelectorAll<HTMLButtonElement>(dialog, '.button-primary')[0];
       copyButton.click();
+      await waitForUpdates(dialog);
 
       expect(copyConfirmedSpy).toHaveBeenCalled();
       const event = copyConfirmedSpy.mock.calls[0][0] as CustomEvent;

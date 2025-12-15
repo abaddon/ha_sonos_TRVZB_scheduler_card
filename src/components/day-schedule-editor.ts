@@ -304,7 +304,8 @@ export class DayScheduleEditor extends LitElement {
    * Handle transition update event from transition-editor
    */
   private _handleTransitionChange(index: number, e: CustomEvent) {
-    const transition = e.detail as Transition;
+    // Event detail structure is { index: number, transition: Transition }
+    const transition = e.detail.transition as Transition;
     this._updateTransition(index, transition);
   }
 

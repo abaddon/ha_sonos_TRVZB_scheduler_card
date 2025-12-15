@@ -322,10 +322,30 @@ export class TransitionEditor extends LitElement {
    * Get temperature color for display
    */
   private _getTemperatureColor(): string {
-    return getTemperatureColor(this.transition.temperature);
+    const temp = this.transition?.temperature ?? 20;
+    return getTemperatureColor(temp);
+  }
+
+  /**
+   * Safely get the current time value
+   */
+  private _getTime(): string {
+    return this.transition?.time ?? '00:00';
+  }
+
+  /**
+   * Safely get the current temperature value
+   */
+  private _getTemperature(): number {
+    return this.transition?.temperature ?? 20;
   }
 
   render() {
+    // Guard against undefined transition
+    if (!this.transition) {
+      return html`<div class="transition-editor">Loading...</div>`;
+    }
+
     const isFirstTransition = this.index === 0;
     const timeInputDisabled = isFirstTransition || this.disabled;
     const hasError = this._validationError !== null;
@@ -345,7 +365,7 @@ export class TransitionEditor extends LitElement {
             <input
               type="time"
               class="time-input ${hasError ? 'error' : ''}"
-              .value=${this.transition.time}
+              .value=${this._getTime()}
               @change=${this._handleTimeChange}
               @input=${this._handleTimeChange}
               ?disabled=${timeInputDisabled}
@@ -374,7 +394,7 @@ export class TransitionEditor extends LitElement {
                 min="4"
                 max="35"
                 step="0.5"
-                .value=${this.transition.temperature.toString()}
+                .value=${this._getTemperature().toString()}
                 @input=${this._handleTemperatureChange}
                 ?disabled=${this.disabled}
                 title="Adjust temperature (4-35°C)"
@@ -383,7 +403,7 @@ export class TransitionEditor extends LitElement {
                 class="temperature-display"
                 style="background-color: ${this._getTemperatureColor()}"
               >
-                ${this.transition.temperature.toFixed(1)}°C
+                ${this._getTemperature().toFixed(1)}°C
               </div>
             </div>
           </div>

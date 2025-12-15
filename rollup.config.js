@@ -9,12 +9,12 @@ export default {
   output: {
     file: 'dist/trvzb-scheduler-card.js',
     format: 'es',
-    sourcemap: true
+    sourcemap: !production  // Only enable sourcemaps in development
   },
   plugins: [
     resolve(),
     typescript({
-      sourceMap: true,
+      sourceMap: !production,  // Only enable sourcemaps in development
       inlineSources: !production
     }),
     production && terser({

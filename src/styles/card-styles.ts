@@ -105,20 +105,20 @@ export const cardStyles = css`
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
 
-  /* Week View Grid */
+  /* Week View Grid - Compact & Responsive */
   .week-view {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 8px;
-    margin-bottom: 16px;
+    gap: 4px;
+    margin-bottom: 12px;
   }
 
   .day-column {
     display: flex;
     flex-direction: column;
-    min-height: 200px;
+    min-height: 150px;
     border: 1px solid var(--divider-color);
-    border-radius: 8px;
+    border-radius: 6px;
     overflow: hidden;
     background: var(--card-background-color);
     cursor: pointer;
@@ -126,8 +126,8 @@ export const cardStyles = css`
   }
 
   .day-column:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-    transform: translateY(-2px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+    transform: translateY(-1px);
   }
 
   .day-column.active {
@@ -136,38 +136,34 @@ export const cardStyles = css`
   }
 
   .day-header {
-    padding: 8px;
+    padding: 6px 4px;
     background: var(--primary-background-color, #f5f5f5);
     text-align: center;
     font-weight: 600;
-    font-size: 12px;
+    font-size: 11px;
     color: var(--primary-text-color);
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.3px;
   }
 
   .day-schedule {
     flex: 1;
     display: flex;
     flex-direction: column;
-    padding: 4px;
+    padding: 3px;
+    gap: 2px;
   }
 
   .transition-block {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 6px 8px;
-    margin-bottom: 4px;
-    border-radius: 4px;
-    font-size: 12px;
+    padding: 4px 6px;
+    border-radius: 3px;
+    font-size: 11px;
     color: white;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
     transition: all 0.2s ease;
-  }
-
-  .transition-block:last-child {
-    margin-bottom: 0;
   }
 
   .transition-block:hover {
@@ -177,10 +173,12 @@ export const cardStyles = css`
 
   .transition-time {
     font-weight: 600;
+    font-size: 10px;
   }
 
   .transition-temp {
     font-weight: 500;
+    font-size: 10px;
   }
 
   /* List View Accordion */
@@ -719,27 +717,34 @@ export const cardStyles = css`
   }
 
   /* Responsive Design */
+  /* Tablet breakpoint */
   @media (max-width: 768px) {
     ha-card {
-      padding: 12px;
+      padding: 8px;
     }
 
     .week-view {
       grid-template-columns: repeat(4, 1fr);
+      gap: 3px;
     }
 
     .day-column {
-      min-height: 150px;
+      min-height: 130px;
     }
 
     .day-header {
-      font-size: 11px;
-      padding: 6px;
+      font-size: 9px;
+      padding: 4px 2px;
     }
 
     .transition-block {
-      font-size: 11px;
-      padding: 4px 6px;
+      font-size: 10px;
+      padding: 3px 4px;
+    }
+
+    .transition-time,
+    .transition-temp {
+      font-size: 9px;
     }
 
     .transition-fields {
@@ -761,10 +766,15 @@ export const cardStyles = css`
     }
   }
 
+  /* Mobile breakpoint */
   @media (max-width: 480px) {
+    ha-card {
+      padding: 6px;
+    }
+
     .week-view {
-      grid-template-columns: repeat(2, 1fr);
-      gap: 6px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2px;
     }
 
     .card-header {
@@ -783,7 +793,23 @@ export const cardStyles = css`
     }
 
     .day-column {
-      min-height: 120px;
+      min-height: 100px;
+    }
+
+    .day-header {
+      font-size: 8px;
+      padding: 3px 2px;
+      letter-spacing: 0px;
+    }
+
+    .transition-block {
+      font-size: 9px;
+      padding: 2px 3px;
+    }
+
+    .transition-time,
+    .transition-temp {
+      font-size: 8px;
     }
 
     .transition-item {

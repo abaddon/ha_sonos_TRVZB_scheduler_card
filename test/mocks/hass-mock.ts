@@ -252,6 +252,31 @@ export function createMockTRVZBEntity(
 }
 
 /**
+ * Create a mock weekly_scheduler sensor entity
+ * This sensor contains the schedule attribute that the card reads from
+ *
+ * @param friendlyName - The base name for the entity (will create sensor.{name}_weekly_scheduler)
+ * @param schedule - Optional weekly schedule (uses sample schedule if not provided)
+ * @returns Mock HassEntity for the sensor
+ */
+export function createMockScheduleSensor(
+  friendlyName: string = "living_room_trvzb",
+  schedule?: MQTTWeeklySchedule
+): HassEntity {
+  const sensorEntityId = `sensor.${friendlyName}_weekly_scheduler`;
+  const scheduleAttribute = schedule || SAMPLE_WEEKLY_SCHEDULE;
+
+  return {
+    entity_id: sensorEntityId,
+    state: 'active',
+    attributes: {
+      friendly_name: `${friendlyName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} Weekly Scheduler`,
+      schedule: scheduleAttribute,
+    },
+  };
+}
+
+/**
  * Create a realistic weekly schedule for testing
  *
  * @param variant - Optional variant ('weekday', 'weekend', 'minimal', 'maximal')
@@ -396,7 +421,9 @@ export interface TestScenario {
   hass: HomeAssistant;
   recorder: MockServiceCallRecorder;
   entity: HassEntity;
+  sensorEntity: HassEntity;
   entityId: string;
+  sensorEntityId: string;
 }
 
 export function createTestScenario(
@@ -405,9 +432,11 @@ export function createTestScenario(
 ): TestScenario {
   const recorder = new MockServiceCallRecorder();
   const entity = createMockTRVZBEntity(entityName, schedule);
+  const sensorEntity = createMockScheduleSensor(entityName, schedule);
   const hass = createMockHass({
     states: {
       [entity.entity_id]: entity,
+      [sensorEntity.entity_id]: sensorEntity,
     },
     recorder,
   });
@@ -416,6 +445,8 @@ export function createTestScenario(
     hass,
     recorder,
     entity,
+    sensorEntity,
     entityId: entity.entity_id,
+    sensorEntityId: sensorEntity.entity_id,
   };
 }

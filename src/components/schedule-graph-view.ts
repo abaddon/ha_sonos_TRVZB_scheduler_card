@@ -670,7 +670,8 @@ export class ScheduleGraphView extends LitElement {
   }
 
   /**
-   * Render temperature profile line
+   * Render temperature profile line as a step chart
+   * Each temperature level stays constant until the next transition time
    */
   private renderTemperatureLine(transitions: Transition[], width: number, height: number) {
     console.log('[schedule-graph-view] renderTemperatureLine called', { transitions, width, height });
@@ -679,24 +680,44 @@ export class ScheduleGraphView extends LitElement {
       return null;
     }
 
-    // Create path for temperature profile
-    const points = transitions.map((t, idx) => {
+    // Create step chart path
+    // For each transition, draw horizontal line to next transition time, then vertical to next temp
+    const pathParts: string[] = [];
+
+    for (let i = 0; i < transitions.length; i++) {
+      const t = transitions[i];
       const hours = this.timeToHours(t.time);
       const x = this.hourToX(hours, width);
       const y = this.tempToY(t.temperature, height);
-      console.log(`[schedule-graph-view] Point ${idx}: time=${t.time} (${hours}h), temp=${t.temperature}°C -> x=${x}, y=${y}`);
-      return `${x},${y}`;
-    });
 
-    // Add end point at 24:00 with last temperature
-    const lastTemp = transitions[transitions.length - 1].temperature;
-    const endX = this.hourToX(24, width);
-    const endY = this.tempToY(lastTemp, height);
-    console.log(`[schedule-graph-view] End point: temp=${lastTemp}°C -> x=${endX}, y=${endY}`);
-    points.push(`${endX},${endY}`);
+      if (i === 0) {
+        // Start point
+        pathParts.push(`M ${x},${y}`);
+        console.log(`[schedule-graph-view] Step start: time=${t.time}, temp=${t.temperature}°C -> x=${x}, y=${y}`);
+      } else {
+        // Vertical line to current temperature (step up/down)
+        pathParts.push(`L ${x},${y}`);
+        console.log(`[schedule-graph-view] Step vertical to: time=${t.time}, temp=${t.temperature}°C -> x=${x}, y=${y}`);
+      }
 
-    const pathData = `M ${points.join(' L ')}`;
-    console.log('[schedule-graph-view] Path data:', pathData);
+      // Determine the end x position for the horizontal line
+      let nextX: number;
+      if (i < transitions.length - 1) {
+        // Horizontal line extends to the next transition time
+        const nextHours = this.timeToHours(transitions[i + 1].time);
+        nextX = this.hourToX(nextHours, width);
+      } else {
+        // Last transition: extend to 24:00
+        nextX = this.hourToX(24, width);
+      }
+
+      // Horizontal line at current temperature
+      pathParts.push(`L ${nextX},${y}`);
+      console.log(`[schedule-graph-view] Step horizontal to: x=${nextX}, y=${y}`);
+    }
+
+    const pathData = pathParts.join(' ');
+    console.log('[schedule-graph-view] Step path data:', pathData);
 
     return svg`
       <path class="temperature-line" d="${pathData}" />

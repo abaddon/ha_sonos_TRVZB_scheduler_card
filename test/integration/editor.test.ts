@@ -261,7 +261,7 @@ describe('Editor Component', () => {
         const event = configChangedSpy.mock.calls[0][0] as CustomEvent;
         const config = event.detail.config;
 
-        expect(config.type).toBe('trvzb-scheduler-card');
+        expect(config.type).toBe('custom:trvzb-scheduler-card');
         expect(config.entity).toBeDefined();
         expect(config.name).toBeDefined();
         expect(config.view_mode).toBeDefined();

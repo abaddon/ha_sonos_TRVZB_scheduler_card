@@ -53,13 +53,13 @@ export const cardStyles = css`
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 16px;
-    padding-bottom: 12px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
     border-bottom: 1px solid var(--divider-color);
   }
 
   .card-title {
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 500;
     color: var(--primary-text-color);
     margin: 0;
@@ -68,7 +68,7 @@ export const cardStyles = css`
 
   .card-actions {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     align-items: center;
   }
 
@@ -503,11 +503,10 @@ export const cardStyles = css`
 
   /* Save Button with Loading State */
   .save-button {
-    width: 100%;
-    padding: 12px;
-    font-size: 16px;
-    margin-top: 16px;
+    padding: 8px 16px;
+    font-size: 14px;
     position: relative;
+    white-space: nowrap;
   }
 
   .save-button.loading {
@@ -517,11 +516,11 @@ export const cardStyles = css`
   .save-button.loading::after {
     content: '';
     position: absolute;
-    width: 16px;
-    height: 16px;
+    width: 12px;
+    height: 12px;
     top: 50%;
-    right: 16px;
-    margin-top: -8px;
+    right: 12px;
+    margin-top: -6px;
     border: 2px solid rgba(255, 255, 255, 0.3);
     border-radius: 50%;
     border-top-color: white;

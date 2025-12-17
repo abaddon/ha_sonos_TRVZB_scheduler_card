@@ -310,5 +310,5 @@ window.customCards.push({
   name: 'TRVZB Scheduler Card',
   description: 'Manage weekly heating schedules for Sonoff TRVZB thermostats',
   preview: false,
-  documentationURL: 'https://github.com/abaddon/ha_sonos_TRVZB_scheduler_card',
+  documentationURL: 'https://github.com/abaddon/ha_sonoff_TRVZB_scheduler_card',
 });

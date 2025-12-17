@@ -1,14 +1,14 @@
 # TRVZB Scheduler Card
 
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
-[![GitHub Release](https://img.shields.io/github/release/abaddon/ha_sonos_TRVZB_scheduler_card.svg)](https://github.com/abaddon/ha_sonos_TRVZB_scheduler_card/releases)
+[![GitHub Release](https://img.shields.io/github/release/abaddon/ha_sonoff_TRVZB_scheduler_card.svg)](https://github.com/abaddon/ha_sonoff_TRVZB_scheduler_card/releases)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2024.1%2B-blue.svg)](https://www.home-assistant.io/)
 [![Zigbee2MQTT](https://img.shields.io/badge/Zigbee2MQTT-Compatible-green.svg)](https://www.zigbee2mqtt.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A Home Assistant custom card for managing weekly heating schedules on **Sonoff TRVZB** thermostatic radiator valves integrated via Zigbee2MQTT.
 
-[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=abaddon&repository=ha_sonos_TRVZB_scheduler_card&category=plugin)
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=abaddon&repository=ha_sonoff_TRVZB_scheduler_card&category=plugin)
 
 > [!WARNING]
 > **Zigbee2MQTT Requirement:** This card requires Zigbee2MQTT with the weekly schedule sensor feature for TRVZB devices. This feature is available after the merge of [PR #30226](https://github.com/Koenkk/zigbee2mqtt/pull/30226). Please ensure your Zigbee2MQTT version includes this change.
@@ -29,7 +29,7 @@ A Home Assistant custom card for managing weekly heating schedules on **Sonoff T
 <!-- TODO: Add actual screenshots -->
 | Week View | Graph View                                                                                                            | Day Editor |
 |-----------|-----------------------------------------------------------------------------------------------------------------------|------------|
-| ![Week View](https://raw.githubusercontent.com/abaddon/ha_sonos_TRVZB_scheduler_card/main/screenshots/week-view.png) | ![List View](https://raw.githubusercontent.com/abaddon/ha_sonos_TRVZB_scheduler_card/main/screenshots/graph-view.png) | ![Day Editor](https://raw.githubusercontent.com/abaddon/ha_sonos_TRVZB_scheduler_card/main/screenshots/day-editor.png) |
+| ![Week View](https://raw.githubusercontent.com/abaddon/ha_sonoff_TRVZB_scheduler_card/main/screenshots/week-view.png) | ![List View](https://raw.githubusercontent.com/abaddon/ha_sonoff_TRVZB_scheduler_card/main/screenshots/graph-view.png) | ![Day Editor](https://raw.githubusercontent.com/abaddon/ha_sonoff_TRVZB_scheduler_card/main/screenshots/day-editor.png) |
 
 ## Requirements
 
@@ -46,14 +46,14 @@ A Home Assistant custom card for managing weekly heating schedules on **Sonoff T
 
 2. Click the button below to add this repository to HACS:
 
-   [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=abaddon&repository=ha_sonos_TRVZB_scheduler_card&category=plugin)
+   [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=abaddon&repository=ha_sonoff_TRVZB_scheduler_card&category=plugin)
 
    **Or manually add the repository:**
 
    1. Open HACS in Home Assistant
    2. Click on the three dots menu in the top right corner
    3. Select **Custom repositories**
-   4. Add the repository URL: `https://github.com/abaddon/ha_sonos_TRVZB_scheduler_card`
+   4. Add the repository URL: `https://github.com/abaddon/ha_sonoff_TRVZB_scheduler_card`
    5. Select **Dashboard** as the category
    6. Click **Add**
 
@@ -67,7 +67,7 @@ A Home Assistant custom card for managing weekly heating schedules on **Sonoff T
 
 ### Option 2: Manual Installation
 
-1. Download `trvzb-scheduler-card.js` from the [latest release](https://github.com/abaddon/ha_sonos_TRVZB_scheduler_card/releases/latest)
+1. Download `trvzb-scheduler-card.js` from the [latest release](https://github.com/abaddon/ha_sonoff_TRVZB_scheduler_card/releases/latest)
 
 2. Copy the file to your Home Assistant config directory:
    ```
@@ -191,8 +191,8 @@ Example: `00:00/18 06:00/21 08:00/18 17:00/22 22:00/18`
 
 ```bash
 # Clone the repository
-git clone https://github.com/abaddon/ha_sonos_TRVZB_scheduler_card.git
-cd ha_sonos_TRVZB_scheduler_card
+git clone https://github.com/abaddon/ha_sonoff_TRVZB_scheduler_card.git
+cd ha_sonoff_TRVZB_scheduler_card
 
 # Install dependencies
 npm install

@@ -257,7 +257,7 @@ hass.callService('climate', 'set_preset_mode', {...});
 ## File Structure
 
 ```
-sonos_TRVZB_scheduler_card/
+sonoff_TRVZB_scheduler_card/
 ├── Claude.md                   # This file
 ├── README.md                   # Usage documentation
 ├── package.json

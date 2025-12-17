@@ -152,6 +152,7 @@ export class DayScheduleEditor extends LitElement {
   /**
    * Add a new transition
    * Default: next hour after last transition, same temperature as last
+   * Auto-saves after adding
    */
   private _addTransition() {
     const transitions = [...this._workingSchedule.transitions];
@@ -196,10 +197,14 @@ export class DayScheduleEditor extends LitElement {
     this._workingSchedule = {
       transitions: [...transitions, newTransition]
     };
+
+    // Auto-save after adding transition
+    this._autoSave();
   }
 
   /**
    * Update a transition at a specific index
+   * Auto-saves after updating
    */
   private _updateTransition(index: number, transition: Transition) {
     const transitions = [...this._workingSchedule.transitions];
@@ -208,10 +213,14 @@ export class DayScheduleEditor extends LitElement {
     this._workingSchedule = {
       transitions
     };
+
+    // Auto-save after updating transition
+    this._autoSave();
   }
 
   /**
    * Delete a transition at a specific index
+   * Auto-saves after deleting
    */
   private _deleteTransition(index: number) {
     const transitions = this._workingSchedule.transitions.filter((_, i) => i !== index);
@@ -219,6 +228,9 @@ export class DayScheduleEditor extends LitElement {
     this._workingSchedule = {
       transitions
     };
+
+    // Auto-save after deleting transition
+    this._autoSave();
   }
 
   /**
@@ -246,15 +258,24 @@ export class DayScheduleEditor extends LitElement {
   }
 
   /**
-   * Save the schedule
-   * Validates first, then dispatches event if valid
+   * Auto-save the schedule
+   * Applies auto-fixes and immediately dispatches the schedule-changed event
+   * This is called automatically whenever transitions are added, updated, or deleted
    */
-  private _save() {
-    if (!this._validate()) {
-      return;
-    }
+  private _autoSave() {
+    // Apply auto-fixes (midnight transition, sorting, deduplication)
+    let schedule = { ...this._workingSchedule };
+    schedule = ensureMidnightTransition(schedule);
+    schedule.transitions = sortTransitions(schedule.transitions);
 
-    // Dispatch schedule-changed event
+    // Update working schedule with fixed version
+    this._workingSchedule = schedule;
+
+    // Validate to show any errors, but don't block saving
+    const result = validateDaySchedule(schedule);
+    this._errors = result.errors;
+
+    // Dispatch schedule-changed event (auto-save)
     this.dispatchEvent(new CustomEvent<ScheduleChangedEvent>('schedule-changed', {
       detail: {
         day: this.day,
@@ -266,10 +287,10 @@ export class DayScheduleEditor extends LitElement {
   }
 
   /**
-   * Cancel editing
-   * Dispatches editor-closed event without saving
+   * Close the editor modal
+   * Dispatches editor-closed event
    */
-  private _cancel() {
+  private _close() {
     this.dispatchEvent(new CustomEvent('editor-closed', {
       bubbles: true,
       composed: true
@@ -296,7 +317,7 @@ export class DayScheduleEditor extends LitElement {
   private _handleOverlayClick(e: MouseEvent) {
     // Only close if clicking the overlay itself, not its children
     if (e.target === e.currentTarget) {
-      this._cancel();
+      this._close();
     }
   }
 
@@ -337,6 +358,26 @@ export class DayScheduleEditor extends LitElement {
           <!-- Modal Header -->
           <div class="modal-header">
             <h2 class="modal-title">${this._getDayDisplayName()} Schedule</h2>
+            <button
+              class="button-icon close"
+              @click=${this._close}
+              title="Close editor"
+              aria-label="Close editor"
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
           </div>
 
           <!-- Modal Content -->
@@ -390,22 +431,6 @@ export class DayScheduleEditor extends LitElement {
                 </button>
               </div>
             </div>
-          </div>
-
-          <!-- Modal Footer -->
-          <div class="modal-footer">
-            <button
-              class="button button-secondary"
-              @click=${this._cancel}
-            >
-              Cancel
-            </button>
-            <button
-              class="button button-success"
-              @click=${this._save}
-            >
-              Save
-            </button>
           </div>
         </div>
       </div>

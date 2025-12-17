@@ -29,6 +29,7 @@ export interface TRVZBSchedulerCardConfig {
   entity: string;           // climate entity ID
   name?: string;            // optional display name
   view_mode?: 'week' | 'list'; // default view mode
+  schedule_sensor?: string; // optional override for schedule sensor entity ID
 }
 
 // Home Assistant types (simplified)

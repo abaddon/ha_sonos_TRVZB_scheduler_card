@@ -17,8 +17,73 @@ export interface EntityInfo {
 }
 
 /**
- * Get the weekly schedule from a climate entity
+ * Derive the schedule sensor entity ID from a climate entity ID
+ * Convention: climate.device_name -> sensor.device_name_weekly_scheduler
+ *
+ * @param climateEntityId - Climate entity ID (e.g., "climate.living_room_trvzb")
+ * @returns Sensor entity ID (e.g., "sensor.living_room_trvzb_weekly_scheduler")
+ */
+export function deriveSensorEntityId(climateEntityId: string): string {
+  const deviceName = extractFriendlyName(climateEntityId);
+  return `sensor.${deviceName}_weekly_scheduler`;
+}
+
+/**
+ * Get the sensor entity ID for reading schedule
+ * Uses configured override or derives from climate entity
+ *
+ * @param climateEntityId - Climate entity ID
+ * @param configuredSensor - Optional configured sensor entity ID override
+ * @returns Sensor entity ID to use for reading schedule
+ */
+export function getSensorEntityId(climateEntityId: string, configuredSensor?: string): string {
+  return configuredSensor || deriveSensorEntityId(climateEntityId);
+}
+
+/**
+ * Get the weekly schedule from the schedule sensor entity
+ * Reads from the 'schedule' attribute of the weekly_scheduler sensor
+ *
+ * @param hass - Home Assistant instance
+ * @param sensorEntityId - Sensor entity ID (e.g., "sensor.device_weekly_scheduler")
+ * @returns Weekly schedule or null if not found
+ */
+export function getScheduleFromSensor(hass: HomeAssistant, sensorEntityId: string): WeeklySchedule | null {
+  try {
+    // Get the sensor entity from hass.states
+    const entity = hass.states[sensorEntityId];
+    if (!entity) {
+      console.warn(`Sensor entity not found: ${sensorEntityId}`);
+      return null;
+    }
+
+    // Read from the 'schedule' attribute
+    const mqttSchedule = entity.attributes.schedule;
+
+    if (!mqttSchedule) {
+      console.warn(`No schedule attribute found on sensor: ${sensorEntityId}`);
+      return null;
+    }
+
+    // Validate that we have a proper schedule object
+    if (typeof mqttSchedule !== 'object' || mqttSchedule === null) {
+      console.error(`Invalid schedule format on sensor: ${sensorEntityId}`, mqttSchedule);
+      return null;
+    }
+
+    // Parse the MQTT format to our internal WeeklySchedule format
+    const schedule = parseWeeklySchedule(mqttSchedule as MQTTWeeklySchedule);
+    return schedule;
+  } catch (error) {
+    console.error(`Error getting schedule from sensor ${sensorEntityId}:`, error);
+    return null;
+  }
+}
+
+/**
+ * Get the weekly schedule from a climate entity (legacy)
  * Handles both 'schedule' and 'weekly_schedule' attribute names (Z2M version differences)
+ * @deprecated Use getScheduleFromSensor instead
  *
  * @param hass - Home Assistant instance
  * @param entityId - Climate entity ID

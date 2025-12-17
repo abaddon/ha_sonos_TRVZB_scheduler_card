@@ -101,6 +101,25 @@ export class TRVZBSchedulerCardEditor extends LitElement {
   }
 
   /**
+   * Handle schedule sensor input change
+   */
+  private _scheduleSensorChanged(e: Event): void {
+    const target = e.target as HTMLInputElement;
+    const value = target.value;
+
+    if (value === this._config.schedule_sensor) {
+      return;
+    }
+
+    this._config = {
+      ...this._config,
+      schedule_sensor: value || undefined,
+    };
+
+    this._configChanged();
+  }
+
+  /**
    * Handle fallback entity select change (when ha-entity-picker is not available)
    */
   private _entitySelectChanged(e: Event): void {
@@ -244,6 +263,24 @@ export class TRVZBSchedulerCardEditor extends LitElement {
           <div class="editor-description">
             Choose the default view when the card loads. Week view shows a calendar grid,
             list view shows an expandable accordion.
+          </div>
+        </div>
+
+        <!-- Schedule Sensor Override -->
+        <div class="editor-row">
+          <label class="editor-label">
+            Schedule Sensor (optional)
+          </label>
+          <input
+            type="text"
+            class="editor-input"
+            .value=${this._config.schedule_sensor || ''}
+            @input=${this._scheduleSensorChanged}
+            placeholder="sensor.device_weekly_scheduler"
+          />
+          <div class="editor-description">
+            Override the schedule sensor entity. By default, the card derives it from the
+            climate entity (e.g., climate.device → sensor.device_weekly_scheduler).
           </div>
         </div>
       </div>

@@ -6,7 +6,7 @@
 import { LitElement, html, css, PropertyValues } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { HomeAssistant, TRVZBSchedulerCardConfig, WeeklySchedule, DayOfWeek } from './models/types';
-import { getEntitySchedule, saveSchedule, getEntityInfo, entityExists } from './services/ha-service';
+import { getScheduleFromSensor, getSensorEntityId, saveSchedule, getEntityInfo, entityExists } from './services/ha-service';
 import { createEmptyWeeklySchedule } from './models/schedule';
 import { cardStyles, getTemperatureColor } from './styles/card-styles';
 
@@ -46,8 +46,9 @@ export class TRVZBSchedulerCard extends LitElement {
   @state() private _error: string | null = null;
   @state() private _hasUnsavedChanges: boolean = false;
 
-  // Track previous entity ID for change detection
+  // Track previous entity IDs for change detection
   private _previousEntityId: string | null = null;
+  private _previousSensorEntityId: string | null = null;
 
   /**
    * Set card configuration
@@ -83,25 +84,27 @@ export class TRVZBSchedulerCard extends LitElement {
 
     if (changedProps.has('hass') && this.hass && this.config) {
       const currentEntityId = this.config.entity;
+      const currentSensorEntityId = getSensorEntityId(currentEntityId, this.config.schedule_sensor);
 
-      // Check if entity changed or if this is the first load
-      if (currentEntityId !== this._previousEntityId) {
+      // Check if entity or sensor changed or if this is the first load
+      if (currentEntityId !== this._previousEntityId || currentSensorEntityId !== this._previousSensorEntityId) {
         this._previousEntityId = currentEntityId;
+        this._previousSensorEntityId = currentSensorEntityId;
         this._loadSchedule();
         return;
       }
 
-      // Check if entity state changed (for schedule updates)
+      // Check if sensor entity state changed (for schedule updates)
       if (changedProps.has('hass')) {
         const oldHass = changedProps.get('hass') as HomeAssistant | undefined;
         if (oldHass) {
-          const oldEntity = oldHass.states[currentEntityId];
-          const newEntity = this.hass.states[currentEntityId];
+          const oldSensor = oldHass.states[currentSensorEntityId];
+          const newSensor = this.hass.states[currentSensorEntityId];
 
-          // Compare entity states to detect changes
-          if (oldEntity && newEntity) {
-            const oldSchedule = oldEntity.attributes.weekly_schedule || oldEntity.attributes.schedule;
-            const newSchedule = newEntity.attributes.weekly_schedule || newEntity.attributes.schedule;
+          // Compare sensor states to detect schedule changes
+          if (oldSensor && newSensor) {
+            const oldSchedule = oldSensor.attributes.schedule;
+            const newSchedule = newSensor.attributes.schedule;
 
             // Reload if schedule changed externally
             if (JSON.stringify(oldSchedule) !== JSON.stringify(newSchedule)) {
@@ -114,7 +117,7 @@ export class TRVZBSchedulerCard extends LitElement {
   }
 
   /**
-   * Load schedule from entity
+   * Load schedule from sensor entity
    */
   private _loadSchedule(): void {
     if (!this.hass || !this.config?.entity) {
@@ -124,24 +127,34 @@ export class TRVZBSchedulerCard extends LitElement {
     // Clear error
     this._error = null;
 
-    // Check if entity exists
+    // Check if climate entity exists (still needed for saving and entity info)
     if (!entityExists(this.hass, this.config.entity)) {
-      this._error = `Entity not found: ${this.config.entity}`;
+      this._error = `Climate entity not found: ${this.config.entity}`;
       this._schedule = null;
       return;
     }
 
-    // Get schedule from entity
-    const schedule = getEntitySchedule(this.hass, this.config.entity);
+    // Get sensor entity ID (derived or configured)
+    const sensorEntityId = getSensorEntityId(this.config.entity, this.config.schedule_sensor);
+
+    // Check if sensor entity exists
+    if (!entityExists(this.hass, sensorEntityId)) {
+      this._error = `Schedule sensor not found: ${sensorEntityId}`;
+      this._schedule = null;
+      return;
+    }
+
+    // Get schedule from sensor entity
+    const schedule = getScheduleFromSensor(this.hass, sensorEntityId);
 
     if (schedule) {
       this._schedule = schedule;
       this._hasUnsavedChanges = false;
     } else {
-      // Entity exists but has no schedule - use default
+      // Sensor exists but has no schedule - use default
       this._schedule = createEmptyWeeklySchedule();
       this._hasUnsavedChanges = true;
-      this._error = 'No schedule found on entity. Using default schedule.';
+      this._error = 'No schedule found on sensor. Using default schedule.';
     }
   }
 

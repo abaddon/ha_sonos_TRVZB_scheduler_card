@@ -109,7 +109,7 @@ describe('Editor Component', () => {
       const viewModeSelects = querySelectorAll<HTMLSelectElement>(editor, 'select');
       const viewModeSelect = viewModeSelects.find(select => {
         const options = Array.from(select.options);
-        return options.some(opt => opt.value === 'week') && options.some(opt => opt.value === 'list');
+        return options.some(opt => opt.value === 'week') && options.some(opt => opt.value === 'graph');
       });
 
       expect(viewModeSelect).toBeDefined();
@@ -220,18 +220,18 @@ describe('Editor Component', () => {
       const viewModeSelects = querySelectorAll<HTMLSelectElement>(editor, 'select');
       const viewModeSelect = viewModeSelects.find(select => {
         const options = Array.from(select.options);
-        return options.some(opt => opt.value === 'week') && options.some(opt => opt.value === 'list');
+        return options.some(opt => opt.value === 'week') && options.some(opt => opt.value === 'graph');
       });
 
       expect(viewModeSelect).toBeDefined();
       if (viewModeSelect) {
-        viewModeSelect.value = 'list';
+        viewModeSelect.value = 'graph';
         viewModeSelect.dispatchEvent(new Event('change', { bubbles: true }));
         await editor.updateComplete;
 
         expect(configChangedSpy).toHaveBeenCalled();
         const event = configChangedSpy.mock.calls[0][0] as CustomEvent;
-        expect(event.detail.config.view_mode).toBe('list');
+        expect(event.detail.config.view_mode).toBe('graph');
       }
     });
 
@@ -239,7 +239,7 @@ describe('Editor Component', () => {
       const editor = await createEditor({
         entity: 'climate.test_entity',
         name: 'Test Card',
-        view_mode: 'list',
+        view_mode: 'graph',
       });
 
       const configChangedSpy = vi.fn();
@@ -415,13 +415,13 @@ describe('Editor Component', () => {
   });
 
   describe('View Mode Selector', () => {
-    it('should have week and list options', async () => {
+    it('should have week and graph options', async () => {
       const editor = await createEditor();
 
       const viewModeSelects = querySelectorAll<HTMLSelectElement>(editor, 'select');
       const viewModeSelect = viewModeSelects.find(select => {
         const options = Array.from(select.options);
-        return options.some(opt => opt.value === 'week') && options.some(opt => opt.value === 'list');
+        return options.some(opt => opt.value === 'week') && options.some(opt => opt.value === 'graph');
       });
 
       expect(viewModeSelect).toBeDefined();
@@ -429,10 +429,10 @@ describe('Editor Component', () => {
       if (viewModeSelect) {
         const options = Array.from(viewModeSelect.options);
         const weekOption = options.find(opt => opt.value === 'week');
-        const listOption = options.find(opt => opt.value === 'list');
+        const graphOption = options.find(opt => opt.value === 'graph');
 
         expect(weekOption).toBeDefined();
-        expect(listOption).toBeDefined();
+        expect(graphOption).toBeDefined();
       }
     });
 
@@ -451,16 +451,16 @@ describe('Editor Component', () => {
     });
 
     it('should preserve selected view mode', async () => {
-      const editor = await createEditor({ view_mode: 'list' });
+      const editor = await createEditor({ view_mode: 'graph' });
 
       const viewModeSelects = querySelectorAll<HTMLSelectElement>(editor, 'select');
       const viewModeSelect = viewModeSelects.find(select => {
         const options = Array.from(select.options);
-        return options.some(opt => opt.value === 'list');
+        return options.some(opt => opt.value === 'graph');
       });
 
       if (viewModeSelect) {
-        expect(viewModeSelect.value).toBe('list');
+        expect(viewModeSelect.value).toBe('graph');
       }
     });
   });

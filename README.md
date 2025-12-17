@@ -24,9 +24,9 @@ A Home Assistant custom card for managing weekly heating schedules on **Sonoff T
 ## Screenshots
 
 <!-- TODO: Add actual screenshots -->
-| Week View | List View | Day Editor |
-|-----------|-----------|------------|
-| ![Week View](https://raw.githubusercontent.com/abaddon/ha_sonos_TRVZB_scheduler_card/main/screenshots/week-view.png) | ![List View](https://raw.githubusercontent.com/abaddon/ha_sonos_TRVZB_scheduler_card/main/screenshots/list-view.png) | ![Day Editor](https://raw.githubusercontent.com/abaddon/ha_sonos_TRVZB_scheduler_card/main/screenshots/day-editor.png) |
+| Week View | Graph View                                                                                                            | Day Editor |
+|-----------|-----------------------------------------------------------------------------------------------------------------------|------------|
+| ![Week View](https://raw.githubusercontent.com/abaddon/ha_sonos_TRVZB_scheduler_card/main/screenshots/week-view.png) | ![List View](https://raw.githubusercontent.com/abaddon/ha_sonos_TRVZB_scheduler_card/main/screenshots/graph-view.png) | ![Day Editor](https://raw.githubusercontent.com/abaddon/ha_sonos_TRVZB_scheduler_card/main/screenshots/day-editor.png) |
 
 ## Requirements
 

@@ -9,7 +9,7 @@ import type { HomeAssistant, TRVZBSchedulerCardConfig } from './models/types';
  * Provides a graphical interface for configuring the card:
  * - Entity picker (climate entities only)
  * - Name input (optional card title override)
- * - Default view mode selector (week/list)
+ * - Default view mode selector (week/graph)
  */
 @customElement('trvzb-scheduler-card-editor')
 export class TRVZBSchedulerCardEditor extends LitElement {
@@ -26,7 +26,7 @@ export class TRVZBSchedulerCardEditor extends LitElement {
   public setConfig(config: TRVZBSchedulerCardConfig): void {
     this._config = {
       ...config,
-      type: 'trvzb-scheduler-card',
+      type: 'custom:trvzb-scheduler-card',
     };
   }
 
@@ -86,7 +86,7 @@ export class TRVZBSchedulerCardEditor extends LitElement {
    */
   private _viewModeChanged(e: Event): void {
     const target = e.target as HTMLSelectElement;
-    const value = target.value as 'week' | 'list';
+    const value = target.value as 'week' | 'graph';
 
     if (value === this._config.view_mode) {
       return;
@@ -258,11 +258,11 @@ export class TRVZBSchedulerCardEditor extends LitElement {
             @change=${this._viewModeChanged}
           >
             <option value="week">Week View</option>
-            <option value="list">List View</option>
+            <option value="graph">Graph View</option>
           </select>
           <div class="editor-description">
             Choose the default view when the card loads. Week view shows a calendar grid,
-            list view shows an expandable accordion.
+            graph view shows an interactive temperature chart.
           </div>
         </div>
 
@@ -306,9 +306,9 @@ declare global {
 
 window.customCards = window.customCards || [];
 window.customCards.push({
-  type: 'trvzb-scheduler-card',
+  type: 'custom:trvzb-scheduler-card',
   name: 'TRVZB Scheduler Card',
   description: 'Manage weekly heating schedules for Sonoff TRVZB thermostats',
   preview: false,
-  documentationURL: 'https://github.com/your-repo/trvzb-scheduler-card',
+  documentationURL: 'https://github.com/abaddon/ha_sonos_TRVZB_scheduler_card',
 });

@@ -52,13 +52,13 @@ export class ScheduleWeekView extends LitElement {
   ];
 
   private readonly dayOrder: DayOfWeek[] = [
-    'sunday',
     'monday',
     'tuesday',
     'wednesday',
     'thursday',
     'friday',
-    'saturday'
+    'saturday',
+    'sunday'
   ];
 
   private readonly dayAbbreviations: Record<DayOfWeek, string> = {

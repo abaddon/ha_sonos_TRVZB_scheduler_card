@@ -240,11 +240,11 @@ describe('TRVZBSchedulerCard - Integration Tests', () => {
       const weekView = queryShadow(card, 'schedule-week-view');
       expect(weekView).toBeTruthy();
 
-      const listView = queryShadow(card, 'schedule-list-view');
-      expect(listView).toBeFalsy();
+      const graphView = queryShadow(card, 'schedule-graph-view');
+      expect(graphView).toBeFalsy();
     });
 
-    it('should toggle view mode to list when toggle button clicked', async () => {
+    it('should toggle view mode to graph when toggle button clicked', async () => {
       const toggleButton = queryShadow<HTMLButtonElement>(card, '.button-icon');
       expect(toggleButton).toBeTruthy();
 
@@ -253,38 +253,38 @@ describe('TRVZBSchedulerCard - Integration Tests', () => {
       await waitForUpdate(card);
 
       const viewMode = (card as any)._viewMode;
-      expect(viewMode).toBe('list');
+      expect(viewMode).toBe('graph');
     });
 
-    it('should render list view when viewMode is list', async () => {
-      // Toggle to list view
+    it('should render graph view when viewMode is graph', async () => {
+      // Toggle to graph view
       const toggleButton = queryShadow<HTMLButtonElement>(card, '.button-icon');
       toggleButton!.click();
       await waitForUpdate(card);
 
-      const listView = queryShadow(card, 'schedule-list-view');
-      expect(listView).toBeTruthy();
+      const graphView = queryShadow(card, 'schedule-graph-view');
+      expect(graphView).toBeTruthy();
 
       const weekView = queryShadow(card, 'schedule-week-view');
       expect(weekView).toBeFalsy();
     });
 
     it('should respect config view_mode setting', async () => {
-      // Create new card with list view_mode
+      // Create new card with graph view_mode
       const newCard = createCard();
       newCard.setConfig({
         type: 'custom:trvzb-scheduler-card',
         entity: scenario.entityId,
-        view_mode: 'list'
+        view_mode: 'graph'
       });
       newCard.hass = scenario.hass;
       await waitForUpdate(newCard);
 
       const viewMode = (newCard as any)._viewMode;
-      expect(viewMode).toBe('list');
+      expect(viewMode).toBe('graph');
 
-      const listView = queryShadow(newCard, 'schedule-list-view');
-      expect(listView).toBeTruthy();
+      const graphView = queryShadow(newCard, 'schedule-graph-view');
+      expect(graphView).toBeTruthy();
 
       // Cleanup
       newCard.parentNode?.removeChild(newCard);
@@ -293,10 +293,10 @@ describe('TRVZBSchedulerCard - Integration Tests', () => {
     it('should toggle view mode back to week', async () => {
       const toggleButton = queryShadow<HTMLButtonElement>(card, '.button-icon');
 
-      // Toggle to list
+      // Toggle to graph
       toggleButton!.click();
       await waitForUpdate(card);
-      expect((card as any)._viewMode).toBe('list');
+      expect((card as any)._viewMode).toBe('graph');
 
       // Toggle back to week
       toggleButton!.click();
@@ -325,19 +325,19 @@ describe('TRVZBSchedulerCard - Integration Tests', () => {
       expect(weekViewSchedule.monday).toBeTruthy();
     });
 
-    it('should pass schedule data to list view component', async () => {
-      // Toggle to list view
+    it('should pass schedule data to graph view component', async () => {
+      // Toggle to graph view
       const toggleButton = queryShadow<HTMLButtonElement>(card, '.button-icon');
       toggleButton!.click();
       await waitForUpdate(card);
 
-      const listView = queryShadow(card, 'schedule-list-view');
-      expect(listView).toBeTruthy();
+      const graphView = queryShadow(card, 'schedule-graph-view');
+      expect(graphView).toBeTruthy();
 
       // Check that schedule property is set
-      const listViewSchedule = (listView as any).schedule;
-      expect(listViewSchedule).toBeTruthy();
-      expect(listViewSchedule.monday).toBeTruthy();
+      const graphViewSchedule = (graphView as any).schedule;
+      expect(graphViewSchedule).toBeTruthy();
+      expect(graphViewSchedule.monday).toBeTruthy();
     });
 
     it('should show loading spinner when schedule not loaded', async () => {

@@ -5,14 +5,14 @@
 
 import { LitElement, html, css, PropertyValues } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
-import { HomeAssistant, TRVZBSchedulerCardConfig, WeeklySchedule, DayOfWeek } from './models/types';
+import { HomeAssistant, TRVZBSchedulerCardConfig, WeeklySchedule, DayOfWeek, MQTTWeeklySchedule } from './models/types';
 import { getScheduleFromSensor, getSensorEntityId, saveSchedule, getEntityInfo, entityExists } from './services/ha-service';
-import { createEmptyWeeklySchedule } from './models/schedule';
+import { createEmptyWeeklySchedule, serializeWeeklySchedule } from './models/schedule';
 import { cardStyles, getTemperatureColor } from './styles/card-styles';
 
 // Import child components (they will be registered separately)
 import './components/schedule-week-view';
-import './components/schedule-list-view';
+import './components/schedule-graph-view';
 import './components/day-schedule-editor';
 import './components/copy-schedule-dialog';
 
@@ -38,7 +38,7 @@ export class TRVZBSchedulerCard extends LitElement {
 
   // Internal state
   @state() private _schedule: WeeklySchedule | null = null;
-  @state() private _viewMode: 'week' | 'list' = 'week';
+  @state() private _viewMode: 'week' | 'graph' = 'week';
   @state() private _editingDay: DayOfWeek | null = null;
   @state() private _showCopyDialog: boolean = false;
   @state() private _copySourceDay: DayOfWeek | null = null;
@@ -49,6 +49,9 @@ export class TRVZBSchedulerCard extends LitElement {
   // Track previous entity IDs for change detection
   private _previousEntityId: string | null = null;
   private _previousSensorEntityId: string | null = null;
+
+  // Track the schedule we saved (in MQTT format) to ignore updates until sensor matches
+  private _pendingSaveSchedule: MQTTWeeklySchedule | null = null;
 
   /**
    * Set card configuration
@@ -95,6 +98,27 @@ export class TRVZBSchedulerCard extends LitElement {
       }
 
       // Check if sensor entity state changed (for schedule updates)
+      // Skip if we're currently saving
+      if (this._saving) {
+        return;
+      }
+
+      // If we have a pending save, check if sensor now matches what we saved
+      if (this._pendingSaveSchedule) {
+        const newSensor = this.hass.states[currentSensorEntityId];
+        if (newSensor) {
+          const sensorSchedule = newSensor.attributes.schedule;
+          // Check if sensor now matches our saved schedule
+          if (JSON.stringify(sensorSchedule) === JSON.stringify(this._pendingSaveSchedule)) {
+            // Sensor caught up - clear pending and resume normal operation
+            this._pendingSaveSchedule = null;
+          }
+          // Either way, don't reload while we have a pending save
+          return;
+        }
+      }
+
+      // Normal external change detection
       if (changedProps.has('hass')) {
         const oldHass = changedProps.get('hass') as HomeAssistant | undefined;
         if (oldHass) {
@@ -246,25 +270,28 @@ export class TRVZBSchedulerCard extends LitElement {
     this._saving = true;
     this._error = null;
 
+    // Store the schedule in MQTT format to compare with sensor updates
+    this._pendingSaveSchedule = serializeWeeklySchedule(this._schedule);
+
     try {
       await saveSchedule(this.hass, this.config.entity, this._schedule);
       this._hasUnsavedChanges = false;
-
-      // Show success message briefly
       this._error = null;
     } catch (error) {
       this._error = error instanceof Error ? error.message : 'Failed to save schedule';
       console.error('Save schedule error:', error);
+      // Clear pending on error so we can detect external changes again
+      this._pendingSaveSchedule = null;
     } finally {
       this._saving = false;
     }
   }
 
   /**
-   * Toggle view mode between week and list
+   * Toggle view mode between week and graph
    */
   private _toggleViewMode(): void {
-    this._viewMode = this._viewMode === 'week' ? 'list' : 'week';
+    this._viewMode = this._viewMode === 'week' ? 'graph' : 'week';
   }
 
   /**
@@ -293,7 +320,7 @@ export class TRVZBSchedulerCard extends LitElement {
               @click=${this._toggleViewMode}
               title="Toggle view mode"
             >
-              ${this._viewMode === 'week' ? '📅' : '📋'}
+              ${this._viewMode === 'week' ? '📅' : '📊'}
             </button>
             <button
               class="button button-primary save-button ${this._saving ? 'loading' : ''}"
@@ -320,10 +347,11 @@ export class TRVZBSchedulerCard extends LitElement {
                 ></schedule-week-view>
               `
             : html`
-                <schedule-list-view
+                <schedule-graph-view
                   .schedule=${this._schedule}
-                  @day-selected=${this._handleDaySelected}
-                ></schedule-list-view>
+                  @schedule-changed=${this._handleScheduleChanged}
+                  @copy-requested=${this._handleCopyRequested}
+                ></schedule-graph-view>
               `}
         </div>
       </ha-card>

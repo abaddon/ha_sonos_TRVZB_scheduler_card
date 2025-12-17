@@ -13,7 +13,8 @@ import {
   createEmptyWeeklySchedule,
   ensureMidnightTransition,
   sortTransitions,
-  copyDaySchedule
+  copyDaySchedule,
+  removeDuplicateTransitions
 } from '../../src/models/schedule';
 import { DaySchedule, MQTTWeeklySchedule, Transition } from '../../src/models/types';
 
@@ -486,6 +487,174 @@ describe('schedule.ts', () => {
       expect(result.transitions[0]).toEqual({ time: '00:00', temperature: 20.5 });
       expect(result.transitions[1]).toEqual({ time: '06:30', temperature: 22.5 });
       expect(result.transitions[2]).toEqual({ time: '12:45', temperature: 24.5 });
+    });
+  });
+
+  describe('removeDuplicateTransitions', () => {
+    it('should remove duplicate transitions with same time', () => {
+      const transitions: Transition[] = [
+        { time: '00:00', temperature: 20 },
+        { time: '06:00', temperature: 22 },
+        { time: '06:00', temperature: 24 },
+        { time: '08:00', temperature: 18 }
+      ];
+
+      const result = removeDuplicateTransitions(transitions);
+
+      expect(result).toHaveLength(3);
+      expect(result[0]).toEqual({ time: '00:00', temperature: 20 });
+      expect(result[1]).toEqual({ time: '06:00', temperature: 22 });
+      expect(result[2]).toEqual({ time: '08:00', temperature: 18 });
+    });
+
+    it('should keep first occurrence when duplicates exist', () => {
+      const transitions: Transition[] = [
+        { time: '06:00', temperature: 20 },
+        { time: '06:00', temperature: 22 },
+        { time: '06:00', temperature: 24 }
+      ];
+
+      const result = removeDuplicateTransitions(transitions);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual({ time: '06:00', temperature: 20 });
+    });
+
+    it('should handle no duplicates', () => {
+      const transitions: Transition[] = [
+        { time: '00:00', temperature: 20 },
+        { time: '06:00', temperature: 22 },
+        { time: '08:00', temperature: 18 }
+      ];
+
+      const result = removeDuplicateTransitions(transitions);
+
+      expect(result).toHaveLength(3);
+      expect(result).toEqual(transitions);
+    });
+
+    it('should not mutate original array', () => {
+      const transitions: Transition[] = [
+        { time: '06:00', temperature: 20 },
+        { time: '06:00', temperature: 22 }
+      ];
+
+      const result = removeDuplicateTransitions(transitions);
+
+      expect(transitions).toHaveLength(2);
+      expect(result).toHaveLength(1);
+    });
+
+    it('should handle empty array', () => {
+      const transitions: Transition[] = [];
+
+      const result = removeDuplicateTransitions(transitions);
+
+      expect(result).toHaveLength(0);
+    });
+
+    it('should handle single transition', () => {
+      const transitions: Transition[] = [{ time: '00:00', temperature: 20 }];
+
+      const result = removeDuplicateTransitions(transitions);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual({ time: '00:00', temperature: 20 });
+    });
+
+    it('should preserve order of first occurrences', () => {
+      const transitions: Transition[] = [
+        { time: '12:00', temperature: 24 },
+        { time: '06:00', temperature: 22 },
+        { time: '12:00', temperature: 26 },
+        { time: '00:00', temperature: 20 },
+        { time: '06:00', temperature: 23 }
+      ];
+
+      const result = removeDuplicateTransitions(transitions);
+
+      expect(result).toHaveLength(3);
+      expect(result[0]).toEqual({ time: '12:00', temperature: 24 });
+      expect(result[1]).toEqual({ time: '06:00', temperature: 22 });
+      expect(result[2]).toEqual({ time: '00:00', temperature: 20 });
+    });
+  });
+
+  describe('parseDaySchedule with duplicates', () => {
+    it('should remove duplicate transitions when parsing', () => {
+      const input = '00:00/20 06:00/22 06:00/24 08:00/18';
+      const result = parseDaySchedule(input);
+
+      expect(result.transitions).toHaveLength(3);
+      expect(result.transitions[0]).toEqual({ time: '00:00', temperature: 20 });
+      expect(result.transitions[1]).toEqual({ time: '06:00', temperature: 22 });
+      expect(result.transitions[2]).toEqual({ time: '08:00', temperature: 18 });
+    });
+
+    it('should keep first occurrence when parsing duplicates', () => {
+      const input = '06:00/20 06:00/22 06:00/24';
+      const result = parseDaySchedule(input);
+
+      // Should have 00:00 (auto-added) and 06:00 (first occurrence)
+      expect(result.transitions).toHaveLength(2);
+      expect(result.transitions[0]).toEqual({ time: '00:00', temperature: 20 });
+      expect(result.transitions[1]).toEqual({ time: '06:00', temperature: 20 });
+    });
+
+    it('should handle multiple sets of duplicates', () => {
+      const input = '06:00/20 06:00/22 08:00/18 08:00/19 10:00/21';
+      const result = parseDaySchedule(input);
+
+      expect(result.transitions).toHaveLength(4);
+      expect(result.transitions[0]).toEqual({ time: '00:00', temperature: 20 });
+      expect(result.transitions[1]).toEqual({ time: '06:00', temperature: 20 });
+      expect(result.transitions[2]).toEqual({ time: '08:00', temperature: 18 });
+      expect(result.transitions[3]).toEqual({ time: '10:00', temperature: 21 });
+    });
+  });
+
+  describe('serializeDaySchedule with duplicates', () => {
+    it('should remove duplicate transitions when serializing', () => {
+      const schedule: DaySchedule = {
+        transitions: [
+          { time: '00:00', temperature: 20 },
+          { time: '06:00', temperature: 22 },
+          { time: '06:00', temperature: 24 },
+          { time: '08:00', temperature: 18 }
+        ]
+      };
+
+      const result = serializeDaySchedule(schedule);
+
+      expect(result).toBe('00:00/20 06:00/22 08:00/18');
+    });
+
+    it('should keep first occurrence when serializing duplicates', () => {
+      const schedule: DaySchedule = {
+        transitions: [
+          { time: '06:00', temperature: 20 },
+          { time: '06:00', temperature: 22 },
+          { time: '06:00', temperature: 24 }
+        ]
+      };
+
+      const result = serializeDaySchedule(schedule);
+
+      expect(result).toBe('06:00/20');
+    });
+
+    it('should handle duplicates with decimal temperatures', () => {
+      const schedule: DaySchedule = {
+        transitions: [
+          { time: '00:00', temperature: 20.5 },
+          { time: '06:00', temperature: 22.5 },
+          { time: '06:00', temperature: 24.5 }
+        ]
+      };
+
+      const result = serializeDaySchedule(schedule);
+
+      expect(result).toBe('00:00/20.5 06:00/22.5');
     });
   });
 });

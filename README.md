@@ -16,7 +16,7 @@ A Home Assistant custom card for managing weekly heating schedules on **Sonoff T
 - **Full Schedule Control**: Edit up to 6 temperature transitions per day
 - **Copy Schedules**: Easily copy a day's schedule to other days (weekdays, weekend, or custom selection)
 - **Temperature Range**: Set temperatures from 4°C to 35°C in 0.5°C increments
-- **Smart Defaults**: Automatically adds midnight (00:00) transition if missing
+- **Smart Defaults**: Automatically adds midnight (00:00) transition if missing and removes duplicate time entries
 - **Theme Integration**: Follows your Home Assistant theme colors
 - **Temperature Color Coding**: Visual temperature indicators (blue for cold, red for hot)
 - **Responsive Design**: Works on desktop, tablet, and mobile devices
@@ -170,9 +170,10 @@ The TRVZB device uses the following schedule format:
 
 - Each day can have up to **6 transitions**
 - Each transition specifies a **time** (HH:mm) and **temperature** (4-35°C)
-- The first transition must be at **00:00** (midnight)
+- The first transition must be at **00:00** (midnight) - automatically added if missing
 - Temperature steps are **0.5°C**
 - The temperature remains active until the next transition
+- **Duplicate transitions** with the same time are automatically removed (first occurrence is kept)
 
 Example: `00:00/18 06:00/21 08:00/18 17:00/22 22:00/18`
 - Midnight to 6:00 AM: 18°C

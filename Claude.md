@@ -97,6 +97,7 @@ interface CardConfig {
 4. **Temperature step: 0.5°C**
 5. **Time format: HH:mm (24-hour)**
 6. **Days: Sunday through Saturday**
+7. **Duplicate handling**: Transitions with the same time are automatically removed (first occurrence kept) during both parsing and serialization
 
 ### 5. UI/UX Design Decisions
 
@@ -153,8 +154,8 @@ hass.callService('climate', 'set_preset_mode', {...});
 1. Each day must have at least 1 transition
 2. First transition must be at 00:00 (auto-corrected)
 3. Maximum 6 transitions per day
-4. Transitions must be in chronological order
-5. No duplicate times within a day
+4. Transitions must be in chronological order (auto-sorted)
+5. No duplicate times within a day (auto-removed, keeping first occurrence)
 6. Temperature must be 4-35°C
 7. Temperature must be in 0.5°C increments
 8. Time must be valid HH:mm format

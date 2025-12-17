@@ -44,8 +44,11 @@ export function parseDaySchedule(scheduleString: string): DaySchedule {
       return createEmptyDaySchedule();
     }
 
+    // Remove duplicate transitions (keep first occurrence of each time)
+    const deduplicated = removeDuplicateTransitions(transitions);
+
     // Ensure midnight transition and sort
-    const schedule = { transitions };
+    const schedule = { transitions: deduplicated };
     return ensureMidnightTransition(schedule);
   } catch (error) {
     console.error('Error parsing day schedule:', error);
@@ -60,8 +63,11 @@ export function parseDaySchedule(scheduleString: string): DaySchedule {
  * @returns Space-separated string in HH:mm/temperature format
  */
 export function serializeDaySchedule(schedule: DaySchedule): string {
+  // Remove duplicates (keep first occurrence of each time)
+  const deduplicated = removeDuplicateTransitions(schedule.transitions);
+
   // Sort transitions before serializing
-  const sorted = sortTransitions(schedule.transitions);
+  const sorted = sortTransitions(deduplicated);
 
   // Convert each transition to "HH:mm/temperature" format
   const parts = sorted.map(t => {
@@ -183,4 +189,25 @@ export function copyDaySchedule(source: DaySchedule): DaySchedule {
       temperature: t.temperature
     }))
   };
+}
+
+/**
+ * Remove duplicate transitions with the same time
+ * Keeps the first occurrence of each unique time
+ *
+ * @param transitions - Array of transitions to deduplicate
+ * @returns Array with duplicates removed (new array, doesn't mutate original)
+ */
+export function removeDuplicateTransitions(transitions: Transition[]): Transition[] {
+  const seen = new Set<string>();
+  const result: Transition[] = [];
+
+  for (const transition of transitions) {
+    if (!seen.has(transition.time)) {
+      seen.add(transition.time);
+      result.push({ ...transition });
+    }
+  }
+
+  return result;
 }

@@ -323,6 +323,7 @@ export class TRVZBSchedulerCard extends LitElement {
                 <schedule-graph-view
                   .schedule=${this._schedule}
                   @schedule-changed=${this._handleScheduleChanged}
+                  @copy-requested=${this._handleCopyRequested}
                 ></schedule-graph-view>
               `}
         </div>

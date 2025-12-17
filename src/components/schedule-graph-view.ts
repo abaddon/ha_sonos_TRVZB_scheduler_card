@@ -135,14 +135,15 @@ export class ScheduleGraphView extends LitElement {
         font-family: var(--paper-font-body1_-_font-family, Arial, sans-serif);
       }
 
-      /* Add transition button */
-      .add-transition-container {
+      /* Action buttons container */
+      .action-buttons-container {
         display: flex;
         justify-content: center;
+        gap: 12px;
         padding-top: 8px;
       }
 
-      .add-transition-button {
+      .action-button {
         padding: 10px 20px;
         background: var(--primary-color, #03a9f4);
         color: white;
@@ -154,19 +155,29 @@ export class ScheduleGraphView extends LitElement {
         transition: all 0.2s ease;
       }
 
-      .add-transition-button:hover:not(:disabled) {
+      .action-button:hover:not(:disabled) {
         background: var(--dark-primary-color, #0288d1);
         transform: translateY(-1px);
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
       }
 
-      .add-transition-button:active:not(:disabled) {
+      .action-button:active:not(:disabled) {
         transform: translateY(0);
       }
 
-      .add-transition-button:disabled {
+      .action-button:disabled {
         opacity: 0.5;
         cursor: not-allowed;
+      }
+
+      .action-button.secondary {
+        background: var(--secondary-background-color, #f0f0f0);
+        color: var(--primary-text-color, #333333);
+        border: 1px solid var(--divider-color, #dddddd);
+      }
+
+      .action-button.secondary:hover:not(:disabled) {
+        background: var(--divider-color, #dddddd);
       }
 
       /* Responsive design */
@@ -798,24 +809,47 @@ export class ScheduleGraphView extends LitElement {
   }
 
   /**
-   * Render add transition button
+   * Render action buttons (add transition and copy to other days)
    */
-  private renderAddButton() {
+  private renderActionButtons() {
     const daySchedule = this.getCurrentDaySchedule();
     const canAdd = daySchedule && daySchedule.transitions.length < 6;
 
     return html`
-      <div class="add-transition-container">
+      <div class="action-buttons-container">
         <button
-          class="add-transition-button"
+          class="action-button"
           @click="${this.addTransition}"
           ?disabled="${!canAdd || this.disabled}"
           title="${canAdd ? 'Add new temperature transition' : 'Maximum 6 transitions per day'}"
         >
           + Add Transition
         </button>
+        <button
+          class="action-button secondary"
+          @click="${this.copyToOtherDays}"
+          ?disabled="${this.disabled}"
+          title="Copy this day's schedule to other days"
+        >
+          Copy to Other Days
+        </button>
       </div>
     `;
+  }
+
+  /**
+   * Request to copy current day's schedule to other days
+   */
+  private copyToOtherDays(): void {
+    if (this.disabled) return;
+
+    this.dispatchEvent(
+      new CustomEvent('copy-requested', {
+        detail: { day: this.selectedDay },
+        bubbles: true,
+        composed: true,
+      })
+    );
   }
 
   render() {
@@ -836,7 +870,7 @@ export class ScheduleGraphView extends LitElement {
       <div class="graph-container">
         ${this.renderDaySelector()}
         ${this.renderChart()}
-        ${this.renderAddButton()}
+        ${this.renderActionButtons()}
       </div>
     `;
   }

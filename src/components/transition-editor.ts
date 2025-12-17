@@ -103,7 +103,9 @@ export class TransitionEditor extends LitElement {
 
       .time-input:disabled {
         cursor: not-allowed;
-        background: var(--disabled-background-color, #e0e0e0);
+        background: var(--card-background-color);
+        color: var(--primary-text-color);
+        opacity: 0.7;
       }
 
       .time-input.error {

@@ -1,6 +1,7 @@
 # TRVZB Scheduler Card
 
 [![HACS Custom](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
+[![GitHub Downloads](https://img.shields.io/github/downloads/abaddon/ha_sonoff_TRVZB_scheduler_card/total.svg?label=downloads&logo=github)](https://github.com/abaddon/ha_sonoff_TRVZB_scheduler_card/releases)
 [![GitHub Release](https://img.shields.io/github/release/abaddon/ha_sonoff_TRVZB_scheduler_card.svg)](https://github.com/abaddon/ha_sonoff_TRVZB_scheduler_card/releases)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2024.1%2B-blue.svg)](https://www.home-assistant.io/)
 [![Zigbee2MQTT](https://img.shields.io/badge/Zigbee2MQTT-Compatible-green.svg)](https://www.zigbee2mqtt.io/)

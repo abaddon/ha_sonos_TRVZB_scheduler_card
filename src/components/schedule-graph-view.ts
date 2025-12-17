@@ -97,7 +97,6 @@ export class ScheduleGraphView extends LitElement {
         font-family: var(--paper-font-body1_-_font-family, Arial, sans-serif);
       }
 
-
       .temperature-line {
         fill: none;
         stroke: var(--primary-color, #00bcd4);
@@ -258,21 +257,19 @@ export class ScheduleGraphView extends LitElement {
 
   // Chart dimensions and layout constants
   private readonly CHART_PADDING = { top: 20, right: 20, bottom: 40, left: 50 };
-  private readonly TEMP_PADDING = 5; // Padding above/below min/max temps
-  private readonly TEMP_ABSOLUTE_MIN = 4; // Absolute minimum allowed
-  private readonly TEMP_ABSOLUTE_MAX = 35; // Absolute maximum allowed
+  private readonly TEMP_PADDING = 5;
+  private readonly TEMP_ABSOLUTE_MIN = 4;
+  private readonly TEMP_ABSOLUTE_MAX = 35;
   private readonly HOUR_MIN = 0;
   private readonly HOUR_MAX = 24;
 
   /**
    * Get dynamic temperature range based on current day's schedule
-   * Returns { min, max } with padding applied
    */
   private getTempRange(): { min: number; max: number } {
     const daySchedule = this.getCurrentDaySchedule();
 
     if (!daySchedule || daySchedule.transitions.length === 0) {
-      // Default range if no schedule
       return { min: 15, max: 25 };
     }
 
@@ -280,11 +277,9 @@ export class ScheduleGraphView extends LitElement {
     const minTemp = Math.min(...temps);
     const maxTemp = Math.max(...temps);
 
-    // Apply padding and clamp to absolute limits
     const rangeMin = Math.max(this.TEMP_ABSOLUTE_MIN, Math.floor(minTemp - this.TEMP_PADDING));
     const rangeMax = Math.min(this.TEMP_ABSOLUTE_MAX, Math.ceil(maxTemp + this.TEMP_PADDING));
 
-    // Ensure minimum range of 10 degrees for readability
     const range = rangeMax - rangeMin;
     if (range < 10) {
       const midpoint = (rangeMin + rangeMax) / 2;
@@ -297,33 +292,21 @@ export class ScheduleGraphView extends LitElement {
     return { min: rangeMin, max: rangeMax };
   }
 
-  /**
-   * Select a different day
-   */
   private selectDay(day: DayOfWeek): void {
     if (this.disabled) return;
     this.selectedDay = day;
   }
 
-  /**
-   * Get the current day's schedule
-   */
   private getCurrentDaySchedule(): DaySchedule | null {
     if (!this.schedule) return null;
     return this.schedule[this.selectedDay] || null;
   }
 
-  /**
-   * Convert hour (0-24) to SVG X coordinate
-   */
   private hourToX(hour: number, width: number): number {
     const chartWidth = width - this.CHART_PADDING.left - this.CHART_PADDING.right;
     return this.CHART_PADDING.left + (hour / 24) * chartWidth;
   }
 
-  /**
-   * Convert temperature to SVG Y coordinate using dynamic range
-   */
   private tempToY(temp: number, height: number): number {
     const { min, max } = this.getTempRange();
     const chartHeight = height - this.CHART_PADDING.top - this.CHART_PADDING.bottom;
@@ -332,18 +315,12 @@ export class ScheduleGraphView extends LitElement {
     return this.CHART_PADDING.top + chartHeight * (1 - normalized);
   }
 
-  /**
-   * Convert SVG X coordinate to hour
-   */
   private xToHour(x: number, width: number): number {
     const chartWidth = width - this.CHART_PADDING.left - this.CHART_PADDING.right;
     const relX = x - this.CHART_PADDING.left;
     return Math.max(0, Math.min(24, (relX / chartWidth) * 24));
   }
 
-  /**
-   * Convert SVG Y coordinate to temperature using dynamic range
-   */
   private yToTemp(y: number, height: number): number {
     const { min, max } = this.getTempRange();
     const chartHeight = height - this.CHART_PADDING.top - this.CHART_PADDING.bottom;
@@ -351,33 +328,22 @@ export class ScheduleGraphView extends LitElement {
     const normalized = 1 - relY / chartHeight;
     const temp = min + normalized * (max - min);
 
-    // Round to nearest 0.5°C and clamp to absolute limits (allow dragging beyond visible range)
     const rounded = Math.round(temp * 2) / 2;
     return Math.max(this.TEMP_ABSOLUTE_MIN, Math.min(this.TEMP_ABSOLUTE_MAX, rounded));
   }
 
-  /**
-   * Convert time string "HH:mm" to decimal hours
-   */
   private timeToHours(time: string): number {
     const [hours, minutes] = time.split(':').map(Number);
     return hours + minutes / 60;
   }
 
-  /**
-   * Convert decimal hours to time string "HH:mm"
-   */
   private hoursToTime(hours: number): string {
     const h = Math.floor(hours);
     const m = Math.round((hours - h) * 60);
     return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
   }
 
-  /**
-   * Handle mouse down on temperature point (start drag)
-   */
   private handlePointMouseDown(index: number, event: MouseEvent): void {
-    console.log('[schedule-graph-view] handlePointMouseDown called', { index, disabled: this.disabled });
     if (this.disabled) return;
 
     event.preventDefault();
@@ -385,36 +351,26 @@ export class ScheduleGraphView extends LitElement {
     this.draggingPoint = index;
     this.dragStartX = event.clientX;
     this.dragStartY = event.clientY;
-    this.isDragging = false; // Will become true once threshold is exceeded
+    this.isDragging = false;
 
-    // Change cursor to grabbing
     document.body.style.cursor = 'grabbing';
-
-    // Add global mouse event listeners
     document.addEventListener('mousemove', this.handleMouseMove);
     document.addEventListener('mouseup', this.handleMouseUp);
   }
 
-  /**
-   * Handle mouse move during drag
-   */
   private handleMouseMove = (event: MouseEvent): void => {
     if (this.draggingPoint === null || this.disabled) return;
 
-    // Check if we've exceeded the drag threshold
     if (!this.isDragging) {
       const dx = event.clientX - this.dragStartX;
       const dy = event.clientY - this.dragStartY;
       const distance = Math.sqrt(dx * dx + dy * dy);
 
       if (distance < this.DRAG_THRESHOLD) {
-        // Haven't moved enough to be considered a drag yet
         return;
       }
 
-      // Now we're actually dragging
       this.isDragging = true;
-      console.log('[schedule-graph-view] Drag threshold exceeded, starting drag');
     }
 
     const svg = this.renderRoot.querySelector('.chart-svg') as SVGSVGElement;
@@ -424,41 +380,27 @@ export class ScheduleGraphView extends LitElement {
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
 
-    // Convert to time and temperature
     const hours = this.xToHour(x, rect.width);
     const temp = this.yToTemp(y, rect.height);
 
-    // Update the transition
     const daySchedule = this.getCurrentDaySchedule();
     if (!daySchedule) return;
 
     const transitions = [...daySchedule.transitions];
-    const transition = transitions[this.draggingPoint];
 
-    // For the first point (index 0), keep time fixed at 00:00
-    // For other points, round hours to 15-minute intervals
     const isFirstPoint = this.draggingPoint === 0;
     const newTime = isFirstPoint ? '00:00' : this.hoursToTime(Math.round(hours * 4) / 4);
 
-    // Update transition (temperature already rounded in yToTemp)
     transitions[this.draggingPoint] = {
       time: newTime,
       temperature: temp,
     };
 
-    // Dispatch preview update (don't save yet, wait for mouse up)
     this.dispatchTransitionUpdate(transitions, false);
   };
 
-  /**
-   * Handle mouse up (end drag and save)
-   */
   private handleMouseUp = (): void => {
-    console.log('[schedule-graph-view] handleMouseUp called', { draggingPoint: this.draggingPoint, isDragging: this.isDragging });
-
-    // Only save if an actual drag occurred (threshold was exceeded)
     if (this.draggingPoint !== null && this.isDragging) {
-      // Save the changes
       const daySchedule = this.getCurrentDaySchedule();
       if (daySchedule) {
         this.dispatchTransitionUpdate(daySchedule.transitions, true);
@@ -467,16 +409,12 @@ export class ScheduleGraphView extends LitElement {
 
     this.draggingPoint = null;
     this.isDragging = false;
-    document.body.style.cursor = ''; // Restore cursor
+    document.body.style.cursor = '';
     document.removeEventListener('mousemove', this.handleMouseMove);
     document.removeEventListener('mouseup', this.handleMouseUp);
   };
 
-  /**
-   * Dispatch transition update event
-   */
   private dispatchTransitionUpdate(transitions: Transition[], save: boolean): void {
-    // Sort transitions
     const sorted = sortTransitions(transitions);
 
     this.dispatchEvent(
@@ -484,7 +422,7 @@ export class ScheduleGraphView extends LitElement {
         detail: {
           day: this.selectedDay,
           schedule: { transitions: sorted },
-          save, // true = auto-save, false = preview only
+          save,
         },
         bubbles: true,
         composed: true,
@@ -492,9 +430,6 @@ export class ScheduleGraphView extends LitElement {
     );
   }
 
-  /**
-   * Add a new transition
-   */
   private addTransition(): void {
     if (this.disabled) return;
 
@@ -503,19 +438,14 @@ export class ScheduleGraphView extends LitElement {
 
     const transitions = [...daySchedule.transitions];
 
-    // Max 6 transitions
     if (transitions.length >= 6) return;
 
-    // Find a good default position (mid-day, mid-temperature)
     let defaultTime = '12:00';
     let defaultTemp = 20;
 
-    // If there are existing transitions, place new one between existing ones
     if (transitions.length > 1) {
-      // Sort by time first
       const sorted = sortTransitions(transitions);
 
-      // Find the biggest time gap
       let maxGap = 0;
       let maxGapIndex = 0;
 
@@ -530,38 +460,27 @@ export class ScheduleGraphView extends LitElement {
         }
       }
 
-      // Place new transition in the middle of the biggest gap
       const hours1 = this.timeToHours(sorted[maxGapIndex].time);
       const hours2 = this.timeToHours(sorted[maxGapIndex + 1].time);
       const midHours = (hours1 + hours2) / 2;
       defaultTime = this.hoursToTime(midHours);
 
-      // Average temperature of surrounding transitions
       defaultTemp = Math.round((sorted[maxGapIndex].temperature + sorted[maxGapIndex + 1].temperature) / 2);
     }
 
-    // Add new transition
     const newTransition: Transition = {
       time: defaultTime,
       temperature: defaultTemp,
     };
 
     transitions.push(newTransition);
-
-    // Dispatch update with save
     this.dispatchTransitionUpdate(transitions, true);
   }
 
-  /**
-   * Format day name for display
-   */
   private formatDayName(day: DayOfWeek): string {
     return day.charAt(0).toUpperCase() + day.slice(1).substring(0, 2);
   }
 
-  /**
-   * Render day selector buttons
-   */
   private renderDaySelector() {
     return html`
       <div class="day-selector">
@@ -580,22 +499,15 @@ export class ScheduleGraphView extends LitElement {
     `;
   }
 
-  /**
-   * Render grid lines
-   */
   private renderGridLines(width: number, height: number) {
-    console.log('[schedule-graph-view] renderGridLines called', { width, height, padding: this.CHART_PADDING });
     const lines = [];
     const { min: tempMin, max: tempMax } = this.getTempRange();
 
-    // Horizontal grid lines (temperature) - use dynamic range
-    // Round to nearest 5 for cleaner grid lines
     const gridStart = Math.ceil(tempMin / 5) * 5;
     const gridEnd = Math.floor(tempMax / 5) * 5;
 
     for (let temp = gridStart; temp <= gridEnd; temp += 5) {
       const y = this.tempToY(temp, height);
-      console.log(`[schedule-graph-view] Horizontal grid line at temp ${temp}°C: y=${y}`);
       lines.push(svg`
         <line
           class="grid-line"
@@ -607,10 +519,8 @@ export class ScheduleGraphView extends LitElement {
       `);
     }
 
-    // Vertical grid lines (every hour)
     for (let hour = 0; hour <= 24; hour += 1) {
       const x = this.hourToX(hour, width);
-      console.log(`[schedule-graph-view] Vertical grid line at hour ${hour}: x=${x}`);
       lines.push(svg`
         <line
           class="grid-line"
@@ -622,20 +532,13 @@ export class ScheduleGraphView extends LitElement {
       `);
     }
 
-    console.log(`[schedule-graph-view] renderGridLines returning ${lines.length} lines`);
     return lines;
   }
 
-  /**
-   * Render axes and labels
-   */
   private renderAxes(width: number, height: number) {
-    console.log('[schedule-graph-view] renderAxes called', { width, height });
     const elements = [];
 
-    // X-axis (time)
     const xAxisY = height - this.CHART_PADDING.bottom;
-    console.log(`[schedule-graph-view] X-axis at y=${xAxisY}, from x=${this.CHART_PADDING.left} to x=${width - this.CHART_PADDING.right}`);
     elements.push(svg`
       <line
         class="axis-line"
@@ -646,7 +549,6 @@ export class ScheduleGraphView extends LitElement {
       />
     `);
 
-    // X-axis labels (every hour)
     for (let hour = 0; hour <= 24; hour += 1) {
       const x = this.hourToX(hour, width);
       elements.push(svg`
@@ -661,7 +563,6 @@ export class ScheduleGraphView extends LitElement {
       `);
     }
 
-    // Y-axis (temperature)
     elements.push(svg`
       <line
         class="axis-line"
@@ -672,9 +573,7 @@ export class ScheduleGraphView extends LitElement {
       />
     `);
 
-    // Y-axis labels (temperature) - use dynamic range
     const { min: tempMin, max: tempMax } = this.getTempRange();
-    // Round to nearest 5 for cleaner labels
     const labelStart = Math.ceil(tempMin / 5) * 5;
     const labelEnd = Math.floor(tempMax / 5) * 5;
 
@@ -695,19 +594,11 @@ export class ScheduleGraphView extends LitElement {
     return elements;
   }
 
-  /**
-   * Render temperature profile line as a step chart
-   * Each temperature level stays constant until the next transition time
-   */
   private renderTemperatureLine(transitions: Transition[], width: number, height: number) {
-    console.log('[schedule-graph-view] renderTemperatureLine called', { transitions, width, height });
     if (transitions.length === 0) {
-      console.log('[schedule-graph-view] No transitions, returning null');
       return null;
     }
 
-    // Create step chart path
-    // For each transition, draw horizontal line to next transition time, then vertical to next temp
     const pathParts: string[] = [];
 
     for (let i = 0; i < transitions.length; i++) {
@@ -717,53 +608,37 @@ export class ScheduleGraphView extends LitElement {
       const y = this.tempToY(t.temperature, height);
 
       if (i === 0) {
-        // Start point
         pathParts.push(`M ${x},${y}`);
-        console.log(`[schedule-graph-view] Step start: time=${t.time}, temp=${t.temperature}°C -> x=${x}, y=${y}`);
       } else {
-        // Vertical line to current temperature (step up/down)
         pathParts.push(`L ${x},${y}`);
-        console.log(`[schedule-graph-view] Step vertical to: time=${t.time}, temp=${t.temperature}°C -> x=${x}, y=${y}`);
       }
 
-      // Determine the end x position for the horizontal line
       let nextX: number;
       if (i < transitions.length - 1) {
-        // Horizontal line extends to the next transition time
         const nextHours = this.timeToHours(transitions[i + 1].time);
         nextX = this.hourToX(nextHours, width);
       } else {
-        // Last transition: extend to 24:00
         nextX = this.hourToX(24, width);
       }
 
-      // Horizontal line at current temperature
       pathParts.push(`L ${nextX},${y}`);
-      console.log(`[schedule-graph-view] Step horizontal to: x=${nextX}, y=${y}`);
     }
 
     const pathData = pathParts.join(' ');
-    console.log('[schedule-graph-view] Step path data:', pathData);
 
     return svg`
       <path class="temperature-line" d="${pathData}" />
     `;
   }
 
-  /**
-   * Render temperature points
-   */
   private renderTemperaturePoints(transitions: Transition[], width: number, height: number) {
-    console.log('[schedule-graph-view] renderTemperaturePoints called', { transitions, width, height });
     return transitions.map((transition, index) => {
       const hours = this.timeToHours(transition.time);
       const x = this.hourToX(hours, width);
       const y = this.tempToY(transition.temperature, height);
       const color = getTemperatureColor(transition.temperature);
       const isDragging = this.draggingPoint === index;
-      const isTimeFixed = index === 0; // Midnight transition has fixed time but adjustable temp
-
-      console.log(`[schedule-graph-view] Point ${index}: time=${transition.time} (${hours}h), temp=${transition.temperature}°C, color=${color}, x=${x}, y=${y}`);
+      const isTimeFixed = index === 0;
 
       return svg`
         <g
@@ -802,20 +677,10 @@ export class ScheduleGraphView extends LitElement {
     });
   }
 
-  /**
-   * Render the temperature chart
-   */
   private renderChart() {
     const daySchedule = this.getCurrentDaySchedule();
 
-    // Debug logging
-    console.log('[schedule-graph-view] renderChart called');
-    console.log('[schedule-graph-view] schedule:', this.schedule);
-    console.log('[schedule-graph-view] selectedDay:', this.selectedDay);
-    console.log('[schedule-graph-view] daySchedule:', daySchedule);
-
     if (!daySchedule) {
-      console.warn('[schedule-graph-view] No day schedule found for', this.selectedDay);
       return html`
         <div class="chart-wrapper">
           <div style="text-align: center; padding: 40px; color: var(--secondary-text-color);">
@@ -826,10 +691,8 @@ export class ScheduleGraphView extends LitElement {
     }
 
     const transitions = daySchedule.transitions;
-    const width = 800; // ViewBox width
-    const height = 350; // ViewBox height
-
-    console.log('[schedule-graph-view] Rendering chart with', transitions.length, 'transitions');
+    const width = 800;
+    const height = 350;
 
     return html`
       <div class="chart-wrapper">
@@ -838,25 +701,15 @@ export class ScheduleGraphView extends LitElement {
           viewBox="0 0 ${width} ${height}"
           preserveAspectRatio="xMidYMid meet"
         >
-          <!-- Grid lines -->
           ${this.renderGridLines(width, height)}
-
-          <!-- Axes -->
           ${this.renderAxes(width, height)}
-
-          <!-- Temperature profile line -->
           ${this.renderTemperatureLine(transitions, width, height)}
-
-          <!-- Temperature points -->
           ${this.renderTemperaturePoints(transitions, width, height)}
         </svg>
       </div>
     `;
   }
 
-  /**
-   * Render action buttons (add transition and copy to other days)
-   */
   private renderActionButtons() {
     const daySchedule = this.getCurrentDaySchedule();
     const canAdd = daySchedule && daySchedule.transitions.length < 6;
@@ -883,9 +736,6 @@ export class ScheduleGraphView extends LitElement {
     `;
   }
 
-  /**
-   * Request to copy current day's schedule to other days
-   */
   private copyToOtherDays(): void {
     if (this.disabled) return;
 
@@ -899,18 +749,13 @@ export class ScheduleGraphView extends LitElement {
   }
 
   render() {
-    console.log('[schedule-graph-view] render() called, schedule:', this.schedule);
-
     if (!this.schedule) {
-      console.warn('[schedule-graph-view] No schedule data, showing empty state');
       return html`
         <div class="empty-state">
           <div class="empty-state-text">No schedule data available</div>
         </div>
       `;
     }
-
-    console.log('[schedule-graph-view] Rendering graph view with schedule');
 
     return html`
       <div class="graph-container">
@@ -921,19 +766,12 @@ export class ScheduleGraphView extends LitElement {
     `;
   }
 
-  // Bound handlers to prevent duplicate listeners
   private boundSvgMouseDown: ((e: Event) => void) | null = null;
   private boundSvgDblClick: ((e: Event) => void) | null = null;
 
-  /**
-   * Attach event listener to SVG for event delegation
-   * This is needed because svg template literal doesn't support @event bindings
-   */
   protected updated(): void {
-    // Use event delegation on the chart SVG
     const svg = this.renderRoot.querySelector('.chart-svg');
     if (svg) {
-      // Create bound handlers if not exists
       if (!this.boundSvgMouseDown) {
         this.boundSvgMouseDown = this.handleSvgMouseDown.bind(this);
       }
@@ -941,9 +779,7 @@ export class ScheduleGraphView extends LitElement {
         this.boundSvgDblClick = this.handleSvgDblClick.bind(this);
       }
 
-      // Check if listener already attached using a data attribute
       if (!svg.hasAttribute('data-listener-attached')) {
-        console.log('[schedule-graph-view] updated() - attaching event delegation to SVG');
         svg.addEventListener('mousedown', this.boundSvgMouseDown);
         svg.addEventListener('dblclick', this.boundSvgDblClick);
         svg.setAttribute('data-listener-attached', 'true');
@@ -951,20 +787,13 @@ export class ScheduleGraphView extends LitElement {
     }
   }
 
-  /**
-   * Handle mousedown on SVG using event delegation
-   */
   private handleSvgMouseDown(e: Event): void {
     const mouseEvent = e as MouseEvent;
     const target = mouseEvent.target as Element;
 
-    console.log('[schedule-graph-view] SVG mousedown, target:', target.tagName, target.className);
-
-    // Find the closest point-group ancestor
     const pointGroup = target.closest('.point-group');
     if (pointGroup) {
       const indexAttr = pointGroup.getAttribute('data-point-index');
-      console.log('[schedule-graph-view] Found point group with index:', indexAttr);
       if (indexAttr !== null) {
         const index = parseInt(indexAttr, 10);
         this.handlePointMouseDown(index, mouseEvent);
@@ -972,23 +801,15 @@ export class ScheduleGraphView extends LitElement {
     }
   }
 
-  /**
-   * Handle double-click on SVG using event delegation - removes the point
-   */
   private handleSvgDblClick(e: Event): void {
     if (this.disabled) return;
 
     const mouseEvent = e as MouseEvent;
     const target = mouseEvent.target as Element;
 
-    console.log('[schedule-graph-view] SVG dblclick, target:', target.tagName, target.className);
-
-    // Find the closest point-group ancestor
     const pointGroup = target.closest('.point-group');
     if (pointGroup) {
       const indexAttr = pointGroup.getAttribute('data-point-index');
-      console.log('[schedule-graph-view] Double-click on point group with index:', indexAttr);
-
       if (indexAttr !== null) {
         const index = parseInt(indexAttr, 10);
         this.removeTransitionAtIndex(index);
@@ -996,37 +817,20 @@ export class ScheduleGraphView extends LitElement {
     }
   }
 
-  /**
-   * Remove a transition at the given index
-   */
   private removeTransitionAtIndex(index: number): void {
     const daySchedule = this.getCurrentDaySchedule();
     if (!daySchedule) return;
 
-    // Cannot remove the first point (00:00 is required)
-    if (index === 0) {
-      console.log('[schedule-graph-view] Cannot remove first point (00:00 is required)');
-      return;
-    }
+    if (index === 0) return;
 
-    // Must have at least 1 transition
-    if (daySchedule.transitions.length <= 1) {
-      console.log('[schedule-graph-view] Cannot remove last transition');
-      return;
-    }
+    if (daySchedule.transitions.length <= 1) return;
 
-    console.log('[schedule-graph-view] Removing transition at index:', index);
-
-    // Create new transitions array without the removed point
     const transitions = daySchedule.transitions.filter((_, i) => i !== index);
-
-    // Dispatch update with save
     this.dispatchTransitionUpdate(transitions, true);
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
-    // Clean up event listeners
     document.removeEventListener('mousemove', this.handleMouseMove);
     document.removeEventListener('mouseup', this.handleMouseUp);
   }

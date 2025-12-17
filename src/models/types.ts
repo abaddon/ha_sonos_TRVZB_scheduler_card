@@ -28,7 +28,7 @@ export interface TRVZBSchedulerCardConfig {
   type: string;
   entity: string;           // climate entity ID
   name?: string;            // optional display name
-  view_mode?: 'week' | 'list'; // default view mode
+  view_mode?: 'week' | 'graph'; // default view mode
   schedule_sensor?: string; // optional override for schedule sensor entity ID
 }
 

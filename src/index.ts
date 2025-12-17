@@ -11,7 +11,7 @@ import { TRVZBSchedulerCardEditor } from './editor';
 
 // Import all child components (auto-register via @customElement decorator)
 import './components/schedule-week-view';
-import './components/schedule-list-view';
+import './components/schedule-graph-view';
 import './components/day-schedule-editor';
 import './components/transition-editor';
 import './components/copy-schedule-dialog';

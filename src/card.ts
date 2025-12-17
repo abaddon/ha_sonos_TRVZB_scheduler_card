@@ -12,7 +12,7 @@ import { cardStyles, getTemperatureColor } from './styles/card-styles';
 
 // Import child components (they will be registered separately)
 import './components/schedule-week-view';
-import './components/schedule-list-view';
+import './components/schedule-graph-view';
 import './components/day-schedule-editor';
 import './components/copy-schedule-dialog';
 
@@ -38,7 +38,7 @@ export class TRVZBSchedulerCard extends LitElement {
 
   // Internal state
   @state() private _schedule: WeeklySchedule | null = null;
-  @state() private _viewMode: 'week' | 'list' = 'week';
+  @state() private _viewMode: 'week' | 'graph' = 'week';
   @state() private _editingDay: DayOfWeek | null = null;
   @state() private _showCopyDialog: boolean = false;
   @state() private _copySourceDay: DayOfWeek | null = null;
@@ -261,10 +261,10 @@ export class TRVZBSchedulerCard extends LitElement {
   }
 
   /**
-   * Toggle view mode between week and list
+   * Toggle view mode between week and graph
    */
   private _toggleViewMode(): void {
-    this._viewMode = this._viewMode === 'week' ? 'list' : 'week';
+    this._viewMode = this._viewMode === 'week' ? 'graph' : 'week';
   }
 
   /**
@@ -293,7 +293,7 @@ export class TRVZBSchedulerCard extends LitElement {
               @click=${this._toggleViewMode}
               title="Toggle view mode"
             >
-              ${this._viewMode === 'week' ? '📅' : '📋'}
+              ${this._viewMode === 'week' ? '📅' : '📊'}
             </button>
             <button
               class="button button-primary save-button ${this._saving ? 'loading' : ''}"
@@ -320,10 +320,10 @@ export class TRVZBSchedulerCard extends LitElement {
                 ></schedule-week-view>
               `
             : html`
-                <schedule-list-view
+                <schedule-graph-view
                   .schedule=${this._schedule}
-                  @day-selected=${this._handleDaySelected}
-                ></schedule-list-view>
+                  @schedule-changed=${this._handleScheduleChanged}
+                ></schedule-graph-view>
               `}
         </div>
       </ha-card>

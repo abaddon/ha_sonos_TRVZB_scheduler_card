@@ -28,8 +28,16 @@ export class ScheduleGraphView extends LitElement {
         display: flex;
         gap: 6px;
         justify-content: center;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
         padding: 8px 0;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+
+      .day-selector::-webkit-scrollbar {
+        display: none;
       }
 
       .day-button {
@@ -43,6 +51,7 @@ export class ScheduleGraphView extends LitElement {
         cursor: pointer;
         transition: all 0.2s ease;
         min-width: 60px;
+        flex-shrink: 0;
       }
 
       .day-button:hover:not(:disabled):not(.active) {
@@ -201,12 +210,14 @@ export class ScheduleGraphView extends LitElement {
       @media (max-width: 480px) {
         .day-selector {
           gap: 4px;
+          justify-content: flex-start;
+          padding: 8px 4px;
         }
 
         .day-button {
-          padding: 6px 10px;
+          padding: 6px 8px;
           font-size: 11px;
-          min-width: 45px;
+          min-width: 40px;
         }
 
         .chart-wrapper {

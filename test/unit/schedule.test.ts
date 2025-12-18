@@ -25,11 +25,11 @@ describe('schedule.ts', () => {
       const result = parseDaySchedule(input);
 
       expect(result.transitions).toHaveLength(5);
-      expect(result.transitions[0]).toEqual({ time: '00:00', temperature: 20 });
-      expect(result.transitions[1]).toEqual({ time: '06:00', temperature: 22 });
-      expect(result.transitions[2]).toEqual({ time: '08:00', temperature: 18 });
-      expect(result.transitions[3]).toEqual({ time: '17:00', temperature: 22 });
-      expect(result.transitions[4]).toEqual({ time: '22:00', temperature: 18 });
+      expect(result.transitions[0]).toMatchObject({ time: '00:00', temperature: 20 });
+      expect(result.transitions[1]).toMatchObject({ time: '06:00', temperature: 22 });
+      expect(result.transitions[2]).toMatchObject({ time: '08:00', temperature: 18 });
+      expect(result.transitions[3]).toMatchObject({ time: '17:00', temperature: 22 });
+      expect(result.transitions[4]).toMatchObject({ time: '22:00', temperature: 18 });
     });
 
     it('should parse schedule with decimal temperatures', () => {
@@ -45,14 +45,14 @@ describe('schedule.ts', () => {
       const result = parseDaySchedule('');
 
       expect(result.transitions).toHaveLength(1);
-      expect(result.transitions[0]).toEqual({ time: '00:00', temperature: 20 });
+      expect(result.transitions[0]).toMatchObject({ time: '00:00', temperature: 20 });
     });
 
     it('should handle whitespace-only string', () => {
       const result = parseDaySchedule('   ');
 
       expect(result.transitions).toHaveLength(1);
-      expect(result.transitions[0]).toEqual({ time: '00:00', temperature: 20 });
+      expect(result.transitions[0]).toMatchObject({ time: '00:00', temperature: 20 });
     });
 
     it('should skip malformed transitions and continue parsing', () => {
@@ -71,7 +71,7 @@ describe('schedule.ts', () => {
       const result = parseDaySchedule(input);
 
       expect(result.transitions).toHaveLength(1);
-      expect(result.transitions[0]).toEqual({ time: '00:00', temperature: 20 });
+      expect(result.transitions[0]).toMatchObject({ time: '00:00', temperature: 20 });
     });
 
     it('should add midnight transition if missing', () => {
@@ -203,8 +203,8 @@ describe('schedule.ts', () => {
       const result = parseWeeklySchedule(mqtt);
 
       // All days should have default schedule
-      expect(result.sunday.transitions[0]).toEqual({ time: '00:00', temperature: 20 });
-      expect(result.monday.transitions[0]).toEqual({ time: '00:00', temperature: 20 });
+      expect(result.sunday.transitions[0]).toMatchObject({ time: '00:00', temperature: 20 });
+      expect(result.monday.transitions[0]).toMatchObject({ time: '00:00', temperature: 20 });
     });
 
     it('should handle missing day properties', () => {
@@ -213,8 +213,8 @@ describe('schedule.ts', () => {
       const result = parseWeeklySchedule(mqtt);
 
       // All days should have default schedule
-      expect(result.sunday.transitions[0]).toEqual({ time: '00:00', temperature: 20 });
-      expect(result.monday.transitions[0]).toEqual({ time: '00:00', temperature: 20 });
+      expect(result.sunday.transitions[0]).toMatchObject({ time: '00:00', temperature: 20 });
+      expect(result.monday.transitions[0]).toMatchObject({ time: '00:00', temperature: 20 });
     });
   });
 
@@ -251,7 +251,7 @@ describe('schedule.ts', () => {
       const result = createEmptyDaySchedule();
 
       expect(result.transitions).toHaveLength(1);
-      expect(result.transitions[0]).toEqual({ time: '00:00', temperature: 20 });
+      expect(result.transitions[0]).toMatchObject({ time: '00:00', temperature: 20 });
     });
 
     it('should create new instance each time', () => {
@@ -297,7 +297,7 @@ describe('schedule.ts', () => {
       const result = ensureMidnightTransition(schedule);
 
       expect(result.transitions).toHaveLength(2);
-      expect(result.transitions[0]).toEqual({ time: '00:00', temperature: 20 });
+      expect(result.transitions[0]).toMatchObject({ time: '00:00', temperature: 20 });
     });
 
     it('should add midnight transition when missing', () => {
@@ -311,7 +311,7 @@ describe('schedule.ts', () => {
       const result = ensureMidnightTransition(schedule);
 
       expect(result.transitions).toHaveLength(3);
-      expect(result.transitions[0]).toEqual({ time: '00:00', temperature: 20 });
+      expect(result.transitions[0]).toMatchObject({ time: '00:00', temperature: 20 });
     });
 
     it('should add midnight transition with default temperature 20', () => {
@@ -389,7 +389,10 @@ describe('schedule.ts', () => {
 
       const result = sortTransitions(transitions);
 
-      expect(result).toEqual(transitions);
+      expect(result).toHaveLength(3);
+      expect(result[0]).toMatchObject({ time: '00:00', temperature: 20 });
+      expect(result[1]).toMatchObject({ time: '06:00', temperature: 22 });
+      expect(result[2]).toMatchObject({ time: '12:00', temperature: 24 });
     });
 
     it('should handle single transition', () => {
@@ -398,7 +401,7 @@ describe('schedule.ts', () => {
       const result = sortTransitions(transitions);
 
       expect(result).toHaveLength(1);
-      expect(result[0]).toEqual({ time: '00:00', temperature: 20 });
+      expect(result[0]).toMatchObject({ time: '00:00', temperature: 20 });
     });
 
     it('should handle empty array', () => {
@@ -435,7 +438,10 @@ describe('schedule.ts', () => {
 
       const result = copyDaySchedule(source);
 
-      expect(result).toEqual(source);
+      // Check that time and temperature are preserved
+      expect(result.transitions).toHaveLength(2);
+      expect(result.transitions[0]).toMatchObject({ time: '00:00', temperature: 20 });
+      expect(result.transitions[1]).toMatchObject({ time: '06:00', temperature: 22 });
       expect(result).not.toBe(source);
       expect(result.transitions).not.toBe(source.transitions);
     });
@@ -484,9 +490,9 @@ describe('schedule.ts', () => {
 
       const result = copyDaySchedule(source);
 
-      expect(result.transitions[0]).toEqual({ time: '00:00', temperature: 20.5 });
-      expect(result.transitions[1]).toEqual({ time: '06:30', temperature: 22.5 });
-      expect(result.transitions[2]).toEqual({ time: '12:45', temperature: 24.5 });
+      expect(result.transitions[0]).toMatchObject({ time: '00:00', temperature: 20.5 });
+      expect(result.transitions[1]).toMatchObject({ time: '06:30', temperature: 22.5 });
+      expect(result.transitions[2]).toMatchObject({ time: '12:45', temperature: 24.5 });
     });
   });
 
@@ -502,9 +508,9 @@ describe('schedule.ts', () => {
       const result = removeDuplicateTransitions(transitions);
 
       expect(result).toHaveLength(3);
-      expect(result[0]).toEqual({ time: '00:00', temperature: 20 });
-      expect(result[1]).toEqual({ time: '06:00', temperature: 22 });
-      expect(result[2]).toEqual({ time: '08:00', temperature: 18 });
+      expect(result[0]).toMatchObject({ time: '00:00', temperature: 20 });
+      expect(result[1]).toMatchObject({ time: '06:00', temperature: 22 });
+      expect(result[2]).toMatchObject({ time: '08:00', temperature: 18 });
     });
 
     it('should keep first occurrence when duplicates exist', () => {
@@ -517,7 +523,7 @@ describe('schedule.ts', () => {
       const result = removeDuplicateTransitions(transitions);
 
       expect(result).toHaveLength(1);
-      expect(result[0]).toEqual({ time: '06:00', temperature: 20 });
+      expect(result[0]).toMatchObject({ time: '06:00', temperature: 20 });
     });
 
     it('should handle no duplicates', () => {
@@ -530,7 +536,9 @@ describe('schedule.ts', () => {
       const result = removeDuplicateTransitions(transitions);
 
       expect(result).toHaveLength(3);
-      expect(result).toEqual(transitions);
+      expect(result[0]).toMatchObject({ time: '00:00', temperature: 20 });
+      expect(result[1]).toMatchObject({ time: '06:00', temperature: 22 });
+      expect(result[2]).toMatchObject({ time: '08:00', temperature: 18 });
     });
 
     it('should not mutate original array', () => {
@@ -559,7 +567,7 @@ describe('schedule.ts', () => {
       const result = removeDuplicateTransitions(transitions);
 
       expect(result).toHaveLength(1);
-      expect(result[0]).toEqual({ time: '00:00', temperature: 20 });
+      expect(result[0]).toMatchObject({ time: '00:00', temperature: 20 });
     });
 
     it('should preserve order of first occurrences', () => {
@@ -574,9 +582,9 @@ describe('schedule.ts', () => {
       const result = removeDuplicateTransitions(transitions);
 
       expect(result).toHaveLength(3);
-      expect(result[0]).toEqual({ time: '12:00', temperature: 24 });
-      expect(result[1]).toEqual({ time: '06:00', temperature: 22 });
-      expect(result[2]).toEqual({ time: '00:00', temperature: 20 });
+      expect(result[0]).toMatchObject({ time: '12:00', temperature: 24 });
+      expect(result[1]).toMatchObject({ time: '06:00', temperature: 22 });
+      expect(result[2]).toMatchObject({ time: '00:00', temperature: 20 });
     });
   });
 
@@ -586,9 +594,9 @@ describe('schedule.ts', () => {
       const result = parseDaySchedule(input);
 
       expect(result.transitions).toHaveLength(3);
-      expect(result.transitions[0]).toEqual({ time: '00:00', temperature: 20 });
-      expect(result.transitions[1]).toEqual({ time: '06:00', temperature: 22 });
-      expect(result.transitions[2]).toEqual({ time: '08:00', temperature: 18 });
+      expect(result.transitions[0]).toMatchObject({ time: '00:00', temperature: 20 });
+      expect(result.transitions[1]).toMatchObject({ time: '06:00', temperature: 22 });
+      expect(result.transitions[2]).toMatchObject({ time: '08:00', temperature: 18 });
     });
 
     it('should keep first occurrence when parsing duplicates', () => {
@@ -597,8 +605,8 @@ describe('schedule.ts', () => {
 
       // Should have 00:00 (auto-added) and 06:00 (first occurrence)
       expect(result.transitions).toHaveLength(2);
-      expect(result.transitions[0]).toEqual({ time: '00:00', temperature: 20 });
-      expect(result.transitions[1]).toEqual({ time: '06:00', temperature: 20 });
+      expect(result.transitions[0]).toMatchObject({ time: '00:00', temperature: 20 });
+      expect(result.transitions[1]).toMatchObject({ time: '06:00', temperature: 20 });
     });
 
     it('should handle multiple sets of duplicates', () => {
@@ -606,10 +614,10 @@ describe('schedule.ts', () => {
       const result = parseDaySchedule(input);
 
       expect(result.transitions).toHaveLength(4);
-      expect(result.transitions[0]).toEqual({ time: '00:00', temperature: 20 });
-      expect(result.transitions[1]).toEqual({ time: '06:00', temperature: 20 });
-      expect(result.transitions[2]).toEqual({ time: '08:00', temperature: 18 });
-      expect(result.transitions[3]).toEqual({ time: '10:00', temperature: 21 });
+      expect(result.transitions[0]).toMatchObject({ time: '00:00', temperature: 20 });
+      expect(result.transitions[1]).toMatchObject({ time: '06:00', temperature: 20 });
+      expect(result.transitions[2]).toMatchObject({ time: '08:00', temperature: 18 });
+      expect(result.transitions[3]).toMatchObject({ time: '10:00', temperature: 21 });
     });
   });
 

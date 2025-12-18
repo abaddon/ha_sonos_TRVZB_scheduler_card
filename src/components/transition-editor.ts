@@ -233,11 +233,18 @@ export class TransitionEditor extends LitElement {
   private _validationError: string | null = null;
 
   /**
-   * Handle time input change
+   * Handle time input blur (focus loss)
+   * Only triggers update if the value actually changed
    */
-  private _handleTimeChange(e: Event): void {
+  private _handleTimeBlur(e: Event): void {
     const input = e.target as HTMLInputElement;
     const newTime = input.value;
+
+    // Skip if value hasn't changed
+    if (newTime === this.transition.time) {
+      this._validationError = null;
+      return;
+    }
 
     // Validate time format
     if (!this._isValidTime(newTime)) {
@@ -279,7 +286,7 @@ export class TransitionEditor extends LitElement {
   private _handleDelete(): void {
     this.dispatchEvent(
       new CustomEvent('transition-deleted', {
-        detail: { index: this.index },
+        detail: { index: this.index, id: this.transition.id },
         bubbles: true,
         composed: true,
       })
@@ -292,7 +299,7 @@ export class TransitionEditor extends LitElement {
   private _dispatchTransitionChanged(transition: Transition): void {
     this.dispatchEvent(
       new CustomEvent('transition-changed', {
-        detail: { index: this.index, transition },
+        detail: { index: this.index, id: this.transition.id, transition },
         bubbles: true,
         composed: true,
       })
@@ -368,8 +375,7 @@ export class TransitionEditor extends LitElement {
               type="time"
               class="time-input ${hasError ? 'error' : ''}"
               .value=${this._getTime()}
-              @change=${this._handleTimeChange}
-              @input=${this._handleTimeChange}
+              @blur=${this._handleTimeBlur}
               ?disabled=${timeInputDisabled}
               step="900"
               title=${isFirstTransition

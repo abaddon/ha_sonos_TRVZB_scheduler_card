@@ -7,6 +7,29 @@ import { DaySchedule, Transition, WeeklySchedule, MQTTWeeklySchedule, DayOfWeek 
 import { compareTime } from '../utils/time';
 
 /**
+ * Counter for generating unique transition IDs within a session
+ */
+let transitionIdCounter = 0;
+
+/**
+ * Generate a unique ID for a transition
+ * Used for UI tracking to maintain DOM element identity during sorting
+ */
+export function generateTransitionId(): string {
+  return `t-${Date.now()}-${++transitionIdCounter}`;
+}
+
+/**
+ * Ensure a transition has an ID, generating one if missing
+ */
+export function ensureTransitionId(transition: Transition): Transition {
+  if (transition.id) {
+    return transition;
+  }
+  return { ...transition, id: generateTransitionId() };
+}
+
+/**
  * Parse a day schedule string from MQTT format
  * Format: "00:00/20 06:00/22 08:00/18" -> array of transitions
  *
@@ -36,7 +59,7 @@ export function parseDaySchedule(scheduleString: string): DaySchedule {
       const time = match[1];
       const temperature = parseFloat(match[2]);
 
-      transitions.push({ time, temperature });
+      transitions.push({ id: generateTransitionId(), time, temperature });
     }
 
     // If no valid transitions were parsed, return default
@@ -123,7 +146,7 @@ export function serializeWeeklySchedule(schedule: WeeklySchedule): MQTTWeeklySch
 export function createEmptyDaySchedule(): DaySchedule {
   return {
     transitions: [
-      { time: '00:00', temperature: 20 }
+      { id: generateTransitionId(), time: '00:00', temperature: 20 }
     ]
   };
 }
@@ -157,8 +180,8 @@ export function ensureMidnightTransition(schedule: DaySchedule): DaySchedule {
   const hasMidnight = transitions.some(t => t.time === '00:00');
 
   if (!hasMidnight) {
-    // Add default midnight transition
-    transitions.unshift({ time: '00:00', temperature: 20 });
+    // Add default midnight transition with a new ID
+    transitions.unshift({ id: generateTransitionId(), time: '00:00', temperature: 20 });
   }
 
   return {
@@ -180,11 +203,12 @@ export function sortTransitions(transitions: Transition[]): Transition[] {
  * Create a deep copy of a day schedule
  *
  * @param source - Day schedule to copy
- * @returns Deep copy of the schedule
+ * @returns Deep copy of the schedule (preserves IDs, generates if missing)
  */
 export function copyDaySchedule(source: DaySchedule): DaySchedule {
   return {
     transitions: source.transitions.map(t => ({
+      id: t.id || generateTransitionId(),
       time: t.time,
       temperature: t.temperature
     }))
@@ -205,7 +229,12 @@ export function removeDuplicateTransitions(transitions: Transition[]): Transitio
   for (const transition of transitions) {
     if (!seen.has(transition.time)) {
       seen.add(transition.time);
-      result.push({ ...transition });
+      // Preserve ID, generate if missing
+      result.push({
+        id: transition.id || generateTransitionId(),
+        time: transition.time,
+        temperature: transition.temperature
+      });
     }
   }
 

@@ -648,9 +648,13 @@ describe('TRVZBSchedulerCard - Integration Tests', () => {
 
       const updatedSchedule = (card as any)._schedule;
 
-      // Tuesday and wednesday should match monday
-      expect(updatedSchedule.tuesday.transitions).toEqual(mondaySchedule.transitions);
-      expect(updatedSchedule.wednesday.transitions).toEqual(mondaySchedule.transitions);
+      // Tuesday and wednesday should match monday (comparing time and temperature, ignoring id)
+      const mondayTimeTemp = mondaySchedule.transitions.map((t: { time: string; temperature: number }) => ({ time: t.time, temperature: t.temperature }));
+      const tuesdayTimeTemp = updatedSchedule.tuesday.transitions.map((t: { time: string; temperature: number }) => ({ time: t.time, temperature: t.temperature }));
+      const wednesdayTimeTemp = updatedSchedule.wednesday.transitions.map((t: { time: string; temperature: number }) => ({ time: t.time, temperature: t.temperature }));
+
+      expect(tuesdayTimeTemp).toEqual(mondayTimeTemp);
+      expect(wednesdayTimeTemp).toEqual(mondayTimeTemp);
 
       // But should be separate objects (deep copy)
       expect(updatedSchedule.tuesday).not.toBe(mondaySchedule);

@@ -3,6 +3,7 @@ export type DayOfWeek = 'sunday' | 'monday' | 'tuesday' | 'wednesday' | 'thursda
 
 // A single transition (time + temperature)
 export interface Transition {
+  id?: string;         // unique identifier for UI tracking (not persisted to MQTT)
   time: string;        // "HH:mm" format (24h)
   temperature: number; // 4-35°C, 0.5°C steps
 }

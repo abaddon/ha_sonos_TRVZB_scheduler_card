@@ -5,8 +5,9 @@
 
 import { LitElement, html, css } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
+import { repeat } from 'lit/directives/repeat.js';
 import { DayOfWeek, DaySchedule, Transition } from '../models/types';
-import { copyDaySchedule, ensureMidnightTransition, sortTransitions } from '../models/schedule';
+import { copyDaySchedule, ensureMidnightTransition, sortTransitions, generateTransitionId } from '../models/schedule';
 import { validateDaySchedule } from '../utils/validation';
 import { cardStyles } from '../styles/card-styles';
 import './transition-editor';
@@ -185,6 +186,7 @@ export class DayScheduleEditor extends LitElement {
     }
 
     const newTransition: Transition = {
+      id: generateTransitionId(),
       time: defaultTime,
       temperature: defaultTemp
     };
@@ -198,12 +200,15 @@ export class DayScheduleEditor extends LitElement {
   }
 
   /**
-   * Update a transition at a specific index
+   * Update a transition by its ID
    * Auto-saves after updating
    */
-  private _updateTransition(index: number, transition: Transition) {
-    const transitions = [...this._workingSchedule.transitions];
-    transitions[index] = { ...transition };
+  private _updateTransitionById(id: string | undefined, transition: Transition) {
+    if (!id) return;
+
+    const transitions = this._workingSchedule.transitions.map(t =>
+      t.id === id ? { ...transition, id } : t
+    );
 
     this._workingSchedule = {
       transitions
@@ -214,11 +219,13 @@ export class DayScheduleEditor extends LitElement {
   }
 
   /**
-   * Delete a transition at a specific index
+   * Delete a transition by its ID
    * Auto-saves after deleting
    */
-  private _deleteTransition(index: number) {
-    const transitions = this._workingSchedule.transitions.filter((_, i) => i !== index);
+  private _deleteTransitionById(id: string | undefined) {
+    if (!id) return;
+
+    const transitions = this._workingSchedule.transitions.filter(t => t.id !== id);
 
     this._workingSchedule = {
       transitions
@@ -319,17 +326,19 @@ export class DayScheduleEditor extends LitElement {
   /**
    * Handle transition update event from transition-editor
    */
-  private _handleTransitionChange(index: number, e: CustomEvent) {
-    // Event detail structure is { index: number, transition: Transition }
-    const transition = e.detail.transition as Transition;
-    this._updateTransition(index, transition);
+  private _handleTransitionChange(e: CustomEvent) {
+    // Event detail structure is { id: string, transition: Transition }
+    const { id, transition } = e.detail;
+    this._updateTransitionById(id, transition);
   }
 
   /**
    * Handle transition delete event from transition-editor
    */
-  private _handleTransitionDelete(index: number) {
-    this._deleteTransition(index);
+  private _handleTransitionDelete(e: CustomEvent) {
+    // Event detail structure is { id: string }
+    const { id } = e.detail;
+    this._deleteTransitionById(id);
   }
 
   /**
@@ -391,15 +400,19 @@ export class DayScheduleEditor extends LitElement {
               <!-- Transitions List -->
               <div class="transitions-container">
                 <div class="transitions-list">
-                  ${this._workingSchedule.transitions.map((transition, index) => html`
-                    <transition-editor
-                      .index=${index}
-                      .transition=${transition}
-                      .canDelete=${this._workingSchedule.transitions.length > 1}
-                      @transition-changed=${(e: CustomEvent) => this._handleTransitionChange(index, e)}
-                      @transition-deleted=${() => this._handleTransitionDelete(index)}
-                    ></transition-editor>
-                  `)}
+                  ${repeat(
+                    this._workingSchedule.transitions,
+                    (transition) => transition.id,
+                    (transition, index) => html`
+                      <transition-editor
+                        .index=${index}
+                        .transition=${transition}
+                        .canDelete=${this._workingSchedule.transitions.length > 1}
+                        @transition-changed=${this._handleTransitionChange}
+                        @transition-deleted=${this._handleTransitionDelete}
+                      ></transition-editor>
+                    `
+                  )}
                 </div>
               </div>
 

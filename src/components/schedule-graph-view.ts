@@ -86,6 +86,8 @@ export class ScheduleGraphView extends LitElement {
         height: 350px;
         user-select: none;
         touch-action: none;
+        -webkit-user-select: none;
+        -webkit-touch-callout: none;
       }
 
       /* Chart elements */
@@ -117,6 +119,7 @@ export class ScheduleGraphView extends LitElement {
       .point-group {
         cursor: grab;
         pointer-events: auto;
+        -webkit-tap-highlight-color: transparent;
       }
 
       .point-group:active {
@@ -899,6 +902,7 @@ export class ScheduleGraphView extends LitElement {
 
       if (!svg.hasAttribute('data-listener-attached')) {
         svg.addEventListener('mousedown', this.boundSvgMouseDown);
+        // Use passive: false to allow preventDefault on iOS
         svg.addEventListener('touchstart', this.boundSvgTouchStart, { passive: false });
         svg.addEventListener('dblclick', this.boundSvgDblClick);
         svg.setAttribute('data-listener-attached', 'true');
@@ -923,7 +927,14 @@ export class ScheduleGraphView extends LitElement {
   private handleSvgTouchStart(e: Event): void {
     const touchEvent = e as TouchEvent;
     const touch = touchEvent.touches[0];
-    const target = document.elementFromPoint(touch.clientX, touch.clientY) as Element;
+
+    // First try direct target from the touch event
+    let target = touchEvent.target as Element;
+
+    // If that doesn't work, try elementFromPoint as fallback
+    if (!target || !target.closest) {
+      target = document.elementFromPoint(touch.clientX, touch.clientY) as Element;
+    }
 
     const pointGroup = target?.closest('.point-group');
     if (pointGroup) {

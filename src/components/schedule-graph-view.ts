@@ -932,7 +932,8 @@ export class ScheduleGraphView extends LitElement {
     let target = touchEvent.target as Element;
 
     // If that doesn't work, try elementFromPoint as fallback
-    if (!target || !target.closest) {
+    // Use instanceof Element for more robust type checking
+    if (!target || !(target instanceof Element) || !target.closest) {
       target = document.elementFromPoint(touch.clientX, touch.clientY) as Element;
     }
 

@@ -86,8 +86,18 @@ jobs:
 
           # Allow Claude to use git, GitHub CLI, and run tests
           allowed_tools: |
-            Bash(git:*)
-            Bash(gh:*)
+            Bash(git status:*)
+            Bash(git checkout:*)
+            Bash(git add:*)
+            Bash(git commit:*)
+            Bash(git push:*)
+            Bash(git branch:*)
+            Bash(git diff:*)
+            Bash(git log:*)
+            Bash(gh issue comment:*)
+            Bash(gh issue edit:*)
+            Bash(gh pr create:*)
+            Bash(gh pr view:*)
             Bash(npm test:*)
             Bash(npm run:*)
             Bash(npx:*)

@@ -17,15 +17,44 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
       - name: Sync labels
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
-            const yaml = require('js-yaml');
 
-            // Read labels configuration
-            const labelsConfig = yaml.load(fs.readFileSync('.github/labels.yml', 'utf8'));
+            // Simple YAML parser for our labels format
+            function parseLabelsYaml(content) {
+              const labels = [];
+              let currentLabel = null;
+
+              const lines = content.split('\n');
+              for (const line of lines) {
+                const trimmed = line.trim();
+
+                if (trimmed.startsWith('- name:')) {
+                  if (currentLabel) labels.push(currentLabel);
+                  currentLabel = { name: trimmed.replace('- name:', '').trim().replace(/^["']|["']$/g, '') };
+                } else if (trimmed.startsWith('color:') && currentLabel) {
+                  currentLabel.color = trimmed.replace('color:', '').trim().replace(/^["']|["']$/g, '');
+                } else if (trimmed.startsWith('description:') && currentLabel) {
+                  currentLabel.description = trimmed.replace('description:', '').trim().replace(/^["']|["']$/g, '');
+                }
+              }
+              if (currentLabel) labels.push(currentLabel);
+              return labels;
+            }
+
+            // Read and parse labels configuration
+            const content = fs.readFileSync('.github/labels.yml', 'utf8');
+            const labelsConfig = parseLabelsYaml(content);
+
+            console.log('Labels to sync:', labelsConfig.map(l => l.name).join(', '));
 
             // Get existing labels
             const { data: existingLabels } = await github.rest.issues.listLabelsForRepo({
@@ -42,7 +71,6 @@ jobs:
 
               try {
                 if (labelExists) {
-                  // Update existing label
                   await github.rest.issues.updateLabel({
                     owner: context.repo.owner,
                     repo: context.repo.repo,
@@ -50,9 +78,8 @@ jobs:
                     color: label.color,
                     description: label.description
                   });
-                  console.log(`Updated label: ${label.name}`);
+                  console.log(`✓ Updated label: ${label.name}`);
                 } else {
-                  // Create new label
                   await github.rest.issues.createLabel({
                     owner: context.repo.owner,
                     repo: context.repo.repo,
@@ -60,9 +87,11 @@ jobs:
                     color: label.color,
                     description: label.description
                   });
-                  console.log(`Created label: ${label.name}`);
+                  console.log(`✓ Created label: ${label.name}`);
                 }
               } catch (error) {
-                console.error(`Error with label ${label.name}:`, error.message);
+                console.error(`✗ Error with label ${label.name}:`, error.message);
               }
             }
+
+            console.log('Label sync complete!');

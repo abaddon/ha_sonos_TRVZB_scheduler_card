@@ -76,6 +76,7 @@ export class ScheduleGraphView extends LitElement {
         width: 100%;
         height: 350px;
         user-select: none;
+        touch-action: none;
       }
 
       /* Chart elements */
@@ -358,6 +359,51 @@ export class ScheduleGraphView extends LitElement {
     document.addEventListener('mouseup', this.handleMouseUp);
   }
 
+  private handlePointTouchStart(index: number, event: TouchEvent): void {
+    if (this.disabled) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const touch = event.touches[0];
+    this.draggingPoint = index;
+    this.dragStartX = touch.clientX;
+    this.dragStartY = touch.clientY;
+    this.isDragging = false;
+
+    document.addEventListener('touchmove', this.handleTouchMove, { passive: false });
+    document.addEventListener('touchend', this.handleTouchEnd);
+    document.addEventListener('touchcancel', this.handleTouchEnd);
+  }
+
+  // ViewBox dimensions (must match the viewBox in renderChart)
+  private readonly VIEWBOX_WIDTH = 800;
+  private readonly VIEWBOX_HEIGHT = 350;
+
+  /**
+   * Convert screen coordinates to SVG viewBox coordinates
+   * Properly handles preserveAspectRatio transformations
+   */
+  private screenToSVGCoords(svg: SVGSVGElement, clientX: number, clientY: number): { x: number; y: number } {
+    const point = svg.createSVGPoint();
+    point.x = clientX;
+    point.y = clientY;
+
+    // Get the inverse of the screen transformation matrix
+    const ctm = svg.getScreenCTM();
+    if (ctm) {
+      const svgPoint = point.matrixTransform(ctm.inverse());
+      return { x: svgPoint.x, y: svgPoint.y };
+    }
+
+    // Fallback if CTM is not available
+    const rect = svg.getBoundingClientRect();
+    return {
+      x: ((clientX - rect.left) / rect.width) * this.VIEWBOX_WIDTH,
+      y: ((clientY - rect.top) / rect.height) * this.VIEWBOX_HEIGHT
+    };
+  }
+
   private handleMouseMove = (event: MouseEvent): void => {
     if (this.draggingPoint === null || this.disabled) return;
 
@@ -376,12 +422,12 @@ export class ScheduleGraphView extends LitElement {
     const svg = this.renderRoot.querySelector('.chart-svg') as SVGSVGElement;
     if (!svg) return;
 
-    const rect = svg.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
+    // Use SVG's built-in coordinate transformation
+    const coords = this.screenToSVGCoords(svg, event.clientX, event.clientY);
 
-    const hours = this.xToHour(x, rect.width);
-    const temp = this.yToTemp(y, rect.height);
+    // Use viewBox dimensions for coordinate conversion
+    const hours = this.xToHour(coords.x, this.VIEWBOX_WIDTH);
+    const temp = this.yToTemp(coords.y, this.VIEWBOX_HEIGHT);
 
     const daySchedule = this.getCurrentDaySchedule();
     if (!daySchedule) return;
@@ -412,6 +458,65 @@ export class ScheduleGraphView extends LitElement {
     document.body.style.cursor = '';
     document.removeEventListener('mousemove', this.handleMouseMove);
     document.removeEventListener('mouseup', this.handleMouseUp);
+  };
+
+  private handleTouchMove = (event: TouchEvent): void => {
+    if (this.draggingPoint === null || this.disabled) return;
+
+    event.preventDefault();
+    const touch = event.touches[0];
+
+    if (!this.isDragging) {
+      const dx = touch.clientX - this.dragStartX;
+      const dy = touch.clientY - this.dragStartY;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (distance < this.DRAG_THRESHOLD) {
+        return;
+      }
+
+      this.isDragging = true;
+    }
+
+    const svg = this.renderRoot.querySelector('.chart-svg') as SVGSVGElement;
+    if (!svg) return;
+
+    // Use SVG's built-in coordinate transformation
+    const coords = this.screenToSVGCoords(svg, touch.clientX, touch.clientY);
+
+    // Use viewBox dimensions for coordinate conversion
+    const hours = this.xToHour(coords.x, this.VIEWBOX_WIDTH);
+    const temp = this.yToTemp(coords.y, this.VIEWBOX_HEIGHT);
+
+    const daySchedule = this.getCurrentDaySchedule();
+    if (!daySchedule) return;
+
+    const transitions = [...daySchedule.transitions];
+
+    const isFirstPoint = this.draggingPoint === 0;
+    const newTime = isFirstPoint ? '00:00' : this.hoursToTime(Math.round(hours * 4) / 4);
+
+    transitions[this.draggingPoint] = {
+      time: newTime,
+      temperature: temp,
+    };
+
+    this.dispatchTransitionUpdate(transitions, false);
+  };
+
+  private handleTouchEnd = (): void => {
+    if (this.draggingPoint !== null && this.isDragging) {
+      const daySchedule = this.getCurrentDaySchedule();
+      if (daySchedule) {
+        this.dispatchTransitionUpdate(daySchedule.transitions, true);
+      }
+    }
+
+    this.draggingPoint = null;
+    this.isDragging = false;
+    document.removeEventListener('touchmove', this.handleTouchMove);
+    document.removeEventListener('touchend', this.handleTouchEnd);
+    document.removeEventListener('touchcancel', this.handleTouchEnd);
   };
 
   private dispatchTransitionUpdate(transitions: Transition[], save: boolean): void {
@@ -691,20 +796,18 @@ export class ScheduleGraphView extends LitElement {
     }
 
     const transitions = daySchedule.transitions;
-    const width = 800;
-    const height = 350;
 
     return html`
       <div class="chart-wrapper">
         <svg
           class="chart-svg"
-          viewBox="0 0 ${width} ${height}"
+          viewBox="0 0 ${this.VIEWBOX_WIDTH} ${this.VIEWBOX_HEIGHT}"
           preserveAspectRatio="xMidYMid meet"
         >
-          ${this.renderGridLines(width, height)}
-          ${this.renderAxes(width, height)}
-          ${this.renderTemperatureLine(transitions, width, height)}
-          ${this.renderTemperaturePoints(transitions, width, height)}
+          ${this.renderGridLines(this.VIEWBOX_WIDTH, this.VIEWBOX_HEIGHT)}
+          ${this.renderAxes(this.VIEWBOX_WIDTH, this.VIEWBOX_HEIGHT)}
+          ${this.renderTemperatureLine(transitions, this.VIEWBOX_WIDTH, this.VIEWBOX_HEIGHT)}
+          ${this.renderTemperaturePoints(transitions, this.VIEWBOX_WIDTH, this.VIEWBOX_HEIGHT)}
         </svg>
       </div>
     `;
@@ -767,6 +870,7 @@ export class ScheduleGraphView extends LitElement {
   }
 
   private boundSvgMouseDown: ((e: Event) => void) | null = null;
+  private boundSvgTouchStart: ((e: Event) => void) | null = null;
   private boundSvgDblClick: ((e: Event) => void) | null = null;
 
   protected updated(): void {
@@ -775,12 +879,16 @@ export class ScheduleGraphView extends LitElement {
       if (!this.boundSvgMouseDown) {
         this.boundSvgMouseDown = this.handleSvgMouseDown.bind(this);
       }
+      if (!this.boundSvgTouchStart) {
+        this.boundSvgTouchStart = this.handleSvgTouchStart.bind(this);
+      }
       if (!this.boundSvgDblClick) {
         this.boundSvgDblClick = this.handleSvgDblClick.bind(this);
       }
 
       if (!svg.hasAttribute('data-listener-attached')) {
         svg.addEventListener('mousedown', this.boundSvgMouseDown);
+        svg.addEventListener('touchstart', this.boundSvgTouchStart, { passive: false });
         svg.addEventListener('dblclick', this.boundSvgDblClick);
         svg.setAttribute('data-listener-attached', 'true');
       }
@@ -797,6 +905,21 @@ export class ScheduleGraphView extends LitElement {
       if (indexAttr !== null) {
         const index = parseInt(indexAttr, 10);
         this.handlePointMouseDown(index, mouseEvent);
+      }
+    }
+  }
+
+  private handleSvgTouchStart(e: Event): void {
+    const touchEvent = e as TouchEvent;
+    const touch = touchEvent.touches[0];
+    const target = document.elementFromPoint(touch.clientX, touch.clientY) as Element;
+
+    const pointGroup = target?.closest('.point-group');
+    if (pointGroup) {
+      const indexAttr = pointGroup.getAttribute('data-point-index');
+      if (indexAttr !== null) {
+        const index = parseInt(indexAttr, 10);
+        this.handlePointTouchStart(index, touchEvent);
       }
     }
   }
@@ -833,6 +956,9 @@ export class ScheduleGraphView extends LitElement {
     super.disconnectedCallback();
     document.removeEventListener('mousemove', this.handleMouseMove);
     document.removeEventListener('mouseup', this.handleMouseUp);
+    document.removeEventListener('touchmove', this.handleTouchMove);
+    document.removeEventListener('touchend', this.handleTouchEnd);
+    document.removeEventListener('touchcancel', this.handleTouchEnd);
   }
 }
 

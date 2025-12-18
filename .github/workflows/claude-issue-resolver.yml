@@ -86,10 +86,9 @@ jobs:
 
           # Allow Claude to use git, GitHub CLI, and run tests
           claude_args: |
-            --allowedTools "Bash(git status),Bash(git checkout),Bash(git checkout -b),Bash(git add),Bash(git add .),Bash(git commit),Bash(git push),Bash(git push -u),Bash(git branch),Bash(git diff),Bash(git log),Bash(gh issue comment),Bash(gh issue edit),Bash(gh pr create),Bash(gh pr view),Bash(npm test),Bash(npm run build),Bash(npm run),Bash(npx),Edit,Write,Read,Glob,Grep,Task"
+            --allowedTools "Bash(git *),Bash(gh *),Bash(npm test),Bash(npm run build),Bash(npm run),Bash(npx),Edit,Write,Read,Glob,Grep,Task"
             --mcp-config '{"mcpServers": {"sequential-thinking": {"command": "npx", "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]}}}'
             --allowedTools mcp__sequential-thinking__sequentialthinking
-            
 
           # Main prompt for Claude
           prompt: |

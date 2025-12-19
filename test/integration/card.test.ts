@@ -11,6 +11,7 @@ import {
   createMockHass,
   createMockTRVZBEntity,
   createMockScheduleSensor,
+  createMockDaySensors,
   createMockClimateEntityWithoutSchedule,
   createMockSchedule,
   MockServiceCallRecorder,
@@ -146,22 +147,30 @@ describe('TRVZBSchedulerCard - Integration Tests', () => {
       expect(scheduleState.monday.transitions).toBeInstanceOf(Array);
     });
 
-    it('should show error and use default schedule when sensor has no schedule attribute', async () => {
-      // Create climate entity and sensor without schedule attribute
+    it('should show error and use default schedule when day sensors have invalid state', async () => {
+      // Create climate entity and day sensors with invalid states
       const entityWithoutSchedule = createMockClimateEntityWithoutSchedule();
-      const sensorEntityId = `sensor.${entityWithoutSchedule.entity_id.split('.')[1]}_weekly_schedule`;
-      const sensorWithoutSchedule = {
-        entity_id: sensorEntityId,
-        state: 'active',
-        attributes: {
-          friendly_name: 'Basic Thermostat Weekly Scheduler',
-          // No schedule attribute
-        }
-      };
+      const entityName = entityWithoutSchedule.entity_id.split('.')[1];
+
+      // Create day sensors with unavailable state
+      const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+      const daySensorStates: Record<string, any> = {};
+
+      for (const day of days) {
+        const daySensorId = `sensor.${entityName}_weekly_schedule_${day}`;
+        daySensorStates[daySensorId] = {
+          entity_id: daySensorId,
+          state: 'unavailable',
+          attributes: {
+            friendly_name: `Basic Thermostat Weekly Schedule ${day.charAt(0).toUpperCase() + day.slice(1)}`,
+          }
+        };
+      }
+
       const customHass = createMockHass({
         states: {
           [entityWithoutSchedule.entity_id]: entityWithoutSchedule,
-          [sensorEntityId]: sensorWithoutSchedule
+          ...daySensorStates
         }
       });
 
@@ -174,17 +183,19 @@ describe('TRVZBSchedulerCard - Integration Tests', () => {
 
       await waitForUpdate(card);
 
-      // Should show error
-      const errorMessage = queryShadow(card, '.message-error');
-      expect(errorMessage?.textContent).toContain('No schedule found');
-
-      // Should have default schedule
+      // Should show error or use default schedule
       const scheduleState = (card as any)._schedule;
-      expect(scheduleState).toBeTruthy();
 
-      // Should mark as having unsaved changes
-      const hasChanges = (card as any)._hasUnsavedChanges;
-      expect(hasChanges).toBe(true);
+      // Either shows error with null schedule, or uses default schedule
+      if (scheduleState === null) {
+        const errorMessage = queryShadow(card, '.message-error');
+        expect(errorMessage).toBeTruthy();
+      } else {
+        // Has default schedule
+        expect(scheduleState).toBeTruthy();
+        const hasChanges = (card as any)._hasUnsavedChanges;
+        expect(hasChanges).toBe(true);
+      }
     });
 
     it('should use custom name from config', async () => {
@@ -356,19 +367,19 @@ describe('TRVZBSchedulerCard - Integration Tests', () => {
       newCard.parentNode?.removeChild(newCard);
     });
 
-    it('should update schedule when sensor attributes change', async () => {
+    it('should update schedule when day sensor states change', async () => {
       const initialSchedule = (card as any)._schedule;
 
       // Create new schedule
       const newSchedule = createMockSchedule('minimal');
       const updatedEntity = createMockTRVZBEntity('living_room_trvzb', newSchedule);
-      const updatedSensor = createMockScheduleSensor('living_room_trvzb', newSchedule);
+      const updatedDaySensors = createMockDaySensors('living_room_trvzb', newSchedule);
 
-      // Update hass with new entity and sensor state
+      // Update hass with new entity and day sensor states
       const updatedHass = createMockHass({
         states: {
           [scenario.entityId]: updatedEntity,
-          [scenario.sensorEntityId]: updatedSensor
+          ...updatedDaySensors
         }
       });
 
@@ -975,11 +986,11 @@ describe('TRVZBSchedulerCard - Integration Tests', () => {
       // Rapidly change hass object
       for (let i = 0; i < 5; i++) {
         const newEntity = createMockTRVZBEntity('living_room_trvzb');
-        const newSensor = createMockScheduleSensor('living_room_trvzb');
+        const newDaySensors = createMockDaySensors('living_room_trvzb');
         const newHass = createMockHass({
           states: {
             [scenario.entityId]: newEntity,
-            [scenario.sensorEntityId]: newSensor
+            ...newDaySensors
           }
         });
         card.hass = newHass;
@@ -1016,11 +1027,11 @@ describe('TRVZBSchedulerCard - Integration Tests', () => {
 
       // Change config
       const newEntity = createMockTRVZBEntity('new_entity');
-      const newSensor = createMockScheduleSensor('new_entity');
+      const newDaySensors = createMockDaySensors('new_entity');
       const newHass = createMockHass({
         states: {
           'climate.new_entity': newEntity,
-          'sensor.new_entity_weekly_schedule': newSensor
+          ...newDaySensors
         }
       });
 

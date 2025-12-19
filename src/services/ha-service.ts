@@ -17,7 +17,21 @@ export interface EntityInfo {
 }
 
 /**
+ * Derive a day-specific schedule sensor entity ID from a climate entity ID
+ * New convention: climate.device_name -> sensor.device_name_weekly_schedule_<day>
+ *
+ * @param climateEntityId - Climate entity ID (e.g., "climate.living_room_trvzb")
+ * @param day - Day of week (e.g., "monday")
+ * @returns Sensor entity ID (e.g., "sensor.living_room_trvzb_weekly_schedule_monday")
+ */
+export function deriveDaySensorEntityId(climateEntityId: string, day: string): string {
+  const deviceName = extractFriendlyName(climateEntityId);
+  return `sensor.${deviceName}_weekly_schedule_${day}`;
+}
+
+/**
  * Derive the schedule sensor entity ID from a climate entity ID
+ * @deprecated Use deriveDaySensorEntityId instead - schedule is now split across 7 sensors
  * Convention: climate.device_name -> sensor.device_name_weekly_schedule
  *
  * @param climateEntityId - Climate entity ID (e.g., "climate.living_room_trvzb")
@@ -42,33 +56,48 @@ export function getSensorEntityId(climateEntityId: string, configuredSensor?: st
 }
 
 /**
- * Get the weekly schedule from the schedule sensor entity
- * Reads from the 'schedule' attribute of the weekly_scheduler sensor
+ * Get the weekly schedule from 7 separate day sensor entities
+ * Reads from the state of each sensor.{device}_weekly_schedule_{day}
  *
  * @param hass - Home Assistant instance
- * @param sensorEntityId - Sensor entity ID (e.g., "sensor.device_weekly_schedule")
+ * @param climateEntityId - Climate entity ID (e.g., "climate.living_room_trvzb")
  * @returns Weekly schedule or null if not found
  */
-export function getScheduleFromSensor(hass: HomeAssistant, sensorEntityId: string): WeeklySchedule | null {
+export function getScheduleFromSensor(hass: HomeAssistant, climateEntityId: string): WeeklySchedule | null {
   try {
-    // Get the sensor entity from hass.states
-    const entity = hass.states[sensorEntityId];
-    if (!entity) {
-      console.warn(`Sensor entity not found: ${sensorEntityId}`);
-      return null;
+    const days: Array<keyof MQTTWeeklySchedule> = [
+      'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'
+    ];
+
+    const mqttSchedule: Partial<MQTTWeeklySchedule> = {};
+    let missingDays: string[] = [];
+
+    // Read each day's schedule from its own sensor
+    for (const day of days) {
+      const daySensorId = deriveDaySensorEntityId(climateEntityId, day);
+      const sensorEntity = hass.states[daySensorId];
+
+      if (!sensorEntity) {
+        console.warn(`Day sensor not found: ${daySensorId}`);
+        missingDays.push(day);
+        continue;
+      }
+
+      // The schedule string is in the sensor's state
+      const dayScheduleString = sensorEntity.state;
+
+      if (!dayScheduleString || dayScheduleString === 'unavailable' || dayScheduleString === 'unknown') {
+        console.warn(`No schedule state found on sensor: ${daySensorId}`);
+        missingDays.push(day);
+        continue;
+      }
+
+      mqttSchedule[day] = dayScheduleString;
     }
 
-    // Read from the 'schedule' attribute
-    const mqttSchedule = entity.attributes.schedule;
-
-    if (!mqttSchedule) {
-      console.warn(`No schedule attribute found on sensor: ${sensorEntityId}`);
-      return null;
-    }
-
-    // Validate that we have a proper schedule object
-    if (typeof mqttSchedule !== 'object' || mqttSchedule === null) {
-      console.error(`Invalid schedule format on sensor: ${sensorEntityId}`, mqttSchedule);
+    // If we're missing any days, return null
+    if (missingDays.length > 0) {
+      console.error(`Missing schedule data for days: ${missingDays.join(', ')}`);
       return null;
     }
 
@@ -76,7 +105,7 @@ export function getScheduleFromSensor(hass: HomeAssistant, sensorEntityId: strin
     const schedule = parseWeeklySchedule(mqttSchedule as MQTTWeeklySchedule);
     return schedule;
   } catch (error) {
-    console.error(`Error getting schedule from sensor ${sensorEntityId}:`, error);
+    console.error(`Error getting schedule from sensors for ${climateEntityId}:`, error);
     return null;
   }
 }

@@ -252,7 +252,8 @@ export function createMockTRVZBEntity(
 }
 
 /**
- * Create a mock weekly_scheduler sensor entity
+ * Create a mock weekly_scheduler sensor entity (deprecated - kept for backwards compatibility)
+ * @deprecated Use createMockDaySensors instead - schedule is now split across 7 sensors
  * This sensor contains the schedule attribute that the card reads from
  *
  * @param friendlyName - The base name for the entity (will create sensor.{name}_weekly_schedule)
@@ -274,6 +275,41 @@ export function createMockScheduleSensor(
       schedule: scheduleAttribute,
     },
   };
+}
+
+/**
+ * Create mock day-specific sensor entities for the new sensor structure
+ * Creates 7 sensors: sensor.{name}_weekly_schedule_{day}
+ *
+ * @param friendlyName - The base name for the entity
+ * @param schedule - Optional weekly schedule (uses sample schedule if not provided)
+ * @returns Record of sensor entity IDs to HassEntity objects
+ */
+export function createMockDaySensors(
+  friendlyName: string = "living_room_trvzb",
+  schedule?: MQTTWeeklySchedule
+): Record<string, HassEntity> {
+  const scheduleData = schedule || SAMPLE_WEEKLY_SCHEDULE;
+  const days: Array<keyof MQTTWeeklySchedule> = [
+    'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'
+  ];
+
+  const sensors: Record<string, HassEntity> = {};
+
+  for (const day of days) {
+    const sensorEntityId = `sensor.${friendlyName}_weekly_schedule_${day}`;
+    const dayScheduleString = scheduleData[day];
+
+    sensors[sensorEntityId] = {
+      entity_id: sensorEntityId,
+      state: dayScheduleString,
+      attributes: {
+        friendly_name: `${friendlyName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} Weekly Schedule ${day.charAt(0).toUpperCase() + day.slice(1)}`,
+      },
+    };
+  }
+
+  return sensors;
 }
 
 /**
@@ -421,9 +457,10 @@ export interface TestScenario {
   hass: HomeAssistant;
   recorder: MockServiceCallRecorder;
   entity: HassEntity;
-  sensorEntity: HassEntity;
+  sensorEntity: HassEntity; // Deprecated - kept for backwards compatibility
+  daySensors: Record<string, HassEntity>; // New day-specific sensors
   entityId: string;
-  sensorEntityId: string;
+  sensorEntityId: string; // Deprecated - kept for backwards compatibility
 }
 
 export function createTestScenario(
@@ -432,11 +469,14 @@ export function createTestScenario(
 ): TestScenario {
   const recorder = new MockServiceCallRecorder();
   const entity = createMockTRVZBEntity(entityName, schedule);
-  const sensorEntity = createMockScheduleSensor(entityName, schedule);
+  const sensorEntity = createMockScheduleSensor(entityName, schedule); // Deprecated but kept for compatibility
+  const daySensors = createMockDaySensors(entityName, schedule);
+
   const hass = createMockHass({
     states: {
       [entity.entity_id]: entity,
-      [sensorEntity.entity_id]: sensorEntity,
+      [sensorEntity.entity_id]: sensorEntity, // Deprecated but kept for compatibility
+      ...daySensors, // Add all 7 day sensors
     },
     recorder,
   });
@@ -445,8 +485,9 @@ export function createTestScenario(
     hass,
     recorder,
     entity,
-    sensorEntity,
+    sensorEntity, // Deprecated but kept for compatibility
+    daySensors,
     entityId: entity.entity_id,
-    sensorEntityId: sensorEntity.entity_id,
+    sensorEntityId: sensorEntity.entity_id, // Deprecated but kept for compatibility
   };
 }

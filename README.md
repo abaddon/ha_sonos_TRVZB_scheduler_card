@@ -16,7 +16,7 @@ A Home Assistant custom card for managing weekly heating schedules on **Sonoff T
 
 ## Features
 
-- **Two View Modes**: Switch between a visual weekly calendar grid and a detailed list view
+- **Two View Modes**: Switch between a visual weekly calendar grid and an interactive graph view with drag controls
 - **Full Schedule Control**: Edit up to 6 temperature transitions per day
 - **Copy Schedules**: Easily copy a day's schedule to other days (weekdays, weekend, or custom selection)
 - **Temperature Range**: Set temperatures from 4°C to 35°C in 0.5°C increments
@@ -123,7 +123,7 @@ view_mode: week
 |--------|------|----------|---------|-------------|
 | `entity` | string | **Yes** | - | The climate entity ID of your TRVZB device |
 | `name` | string | No | Entity friendly name | Custom title for the card |
-| `view_mode` | string | No | `week` | Default view mode: `week` or `list` |
+| `view_mode` | string | No | `week` | Default view mode: `week` or `graph` |
 
 ## Usage
 
@@ -131,14 +131,14 @@ view_mode: week
 
 Click the view toggle button in the card header to switch between:
 - **Week View**: Visual 7-day calendar with colored temperature blocks
-- **List View**: Expandable accordion showing each day's transitions
+- **Graph View**: Interactive temperature graph with drag-to-adjust controls
 
 ### Editing a Day's Schedule
 
-1. Click on any day (in week view) or the "Edit" button (in list view)
+1. Click on any day in week view to open the editor, or drag points directly in graph view
 2. The day editor modal will open showing all transitions
 3. Modify times and temperatures as needed
-4. Click **Save** to apply changes to the card
+4. Changes are auto-saved to the card (click main **Save** button to send to device)
 
 ### Adding Transitions
 
@@ -234,12 +234,12 @@ src/
 ├── editor.ts                   # Card configuration editor
 ├── components/
 │   ├── schedule-week-view.ts   # Weekly calendar view
-│   ├── schedule-list-view.ts   # Accordion list view
+│   ├── schedule-graph-view.ts  # Interactive graph view with drag controls
 │   ├── day-schedule-editor.ts  # Day editing modal
 │   ├── transition-editor.ts    # Single transition editor
 │   └── copy-schedule-dialog.ts # Copy schedule dialog
 ├── models/
-│   ├── types.ts                # TypeScript interfaces
+│   ├── types.ts                # TypeScript interfaces & constants
 │   └── schedule.ts             # Schedule parsing/serialization
 ├── services/
 │   └── ha-service.ts           # Home Assistant integration
@@ -280,10 +280,10 @@ src/
 
 ### Schedule Not Loading
 
-1. The schedule is read from entity attributes (`schedule` or `weekly_schedule`)
-2. Ensure Zigbee2MQTT is exposing the schedule attribute
-3. Try requesting the schedule manually: publish to `zigbee2mqtt/DEVICE_NAME/get` with payload `{"weekly_schedule":""}`
-4. Check if the schedule appears in the entity's attributes in Developer Tools → States
+1. The schedule is read from 7 separate day sensor entities (e.g., `sensor.device_name_weekly_schedule_monday`)
+2. Ensure Zigbee2MQTT is exposing the weekly schedule sensors (requires Z2M with PR #30226)
+3. Check if all 7 day sensors exist in Developer Tools → States
+4. Try requesting the schedule manually: publish to `zigbee2mqtt/DEVICE_NAME/get` with payload `{"weekly_schedule":""}`
 
 ### HACS Installation Issues
 

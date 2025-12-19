@@ -10,7 +10,7 @@ export function getTemperatureColor(temp: number): string {
   const clampedTemp = Math.max(4, Math.min(35, temp));
 
   // Normalize temperature to 0-1 range
-  const normalized = (clampedTemp - 4) / (35 - 4);
+  const normalized = Math.max(0, Math.min(1, (clampedTemp - 14) / (22 - 14)))
 
   let r: number, g: number, b: number;
 

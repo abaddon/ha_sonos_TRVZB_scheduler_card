@@ -19,12 +19,11 @@ src/
 ├── components/
 │   ├── schedule-week-view.ts   # Weekly calendar visualization
 │   ├── schedule-graph-view.ts  # Interactive graph view with drag controls
-│   ├── schedule-list-view.ts   # List-based schedule view
 │   ├── day-schedule-editor.ts  # Single day schedule editing
 │   ├── transition-editor.ts    # Single transition (time/temp) editor
 │   └── copy-schedule-dialog.ts # Dialog for copying schedules
 ├── models/
-│   ├── types.ts                # TypeScript interfaces
+│   ├── types.ts                # TypeScript interfaces & DAYS_OF_WEEK constant
 │   └── schedule.ts             # Schedule data model & validation
 ├── services/
 │   └── ha-service.ts           # Home Assistant service calls
@@ -71,8 +70,12 @@ Each day's schedule is a space-separated string of transitions in `HH:mm/tempera
 ## Home Assistant Integration
 
 ### Reading Schedule
+Schedule is read from 7 separate day sensor entities:
 ```javascript
-const schedule = hass.states[entityId].attributes.weekly_schedule;
+// Each day has its own sensor: sensor.{device}_weekly_schedule_{day}
+const sundaySchedule = hass.states['sensor.living_room_trvzb_weekly_schedule_sunday'].state;
+const mondaySchedule = hass.states['sensor.living_room_trvzb_weekly_schedule_monday'].state;
+// ... etc for each day
 ```
 
 ### Writing Schedule

@@ -793,11 +793,17 @@ describe('TRVZBSchedulerCard - Integration Tests', () => {
       await waitForUpdate(card);
       await new Promise(resolve => setTimeout(resolve, 10));
 
-      const lastCall = scenario.recorder.getLastCall();
-      expect(lastCall?.domain).toBe('mqtt');
-      expect(lastCall?.service).toBe('publish');
-      expect(lastCall?.data.topic).toContain('zigbee2mqtt');
-      expect(lastCall?.data.topic).toContain('/set');
+      // Each day is published to its own topic
+      const calls = scenario.recorder.getCalls('mqtt', 'publish');
+      expect(calls.length).toBe(7);
+
+      // All calls should follow the topic pattern
+      for (const call of calls) {
+        expect(call.domain).toBe('mqtt');
+        expect(call.service).toBe('publish');
+        expect(call.data.topic).toContain('zigbee2mqtt');
+        expect(call.data.topic).toContain('/set/weekly_schedule_');
+      }
     });
 
     it('should pass weekly_schedule in payload', async () => {
@@ -819,11 +825,24 @@ describe('TRVZBSchedulerCard - Integration Tests', () => {
       await waitForUpdate(card);
       await new Promise(resolve => setTimeout(resolve, 10));
 
-      const lastCall = scenario.recorder.getLastCall();
-      const payload = JSON.parse(lastCall?.data.payload as string);
-      expect(payload).toHaveProperty('weekly_schedule');
-      expect(payload.weekly_schedule).toHaveProperty('monday');
-      expect(payload.weekly_schedule).toHaveProperty('sunday');
+      // New Z2M format: each day is published to its own topic
+      const calls = scenario.recorder.getCalls('mqtt', 'publish');
+      expect(calls.length).toBe(7); // One call per day
+
+      // Check that each day has its own topic
+      const topics = calls.map(call => call.data.topic as string);
+      expect(topics).toContain('zigbee2mqtt/living_room_trvzb/set/weekly_schedule_sunday');
+      expect(topics).toContain('zigbee2mqtt/living_room_trvzb/set/weekly_schedule_monday');
+      expect(topics).toContain('zigbee2mqtt/living_room_trvzb/set/weekly_schedule_tuesday');
+      expect(topics).toContain('zigbee2mqtt/living_room_trvzb/set/weekly_schedule_wednesday');
+      expect(topics).toContain('zigbee2mqtt/living_room_trvzb/set/weekly_schedule_thursday');
+      expect(topics).toContain('zigbee2mqtt/living_room_trvzb/set/weekly_schedule_friday');
+      expect(topics).toContain('zigbee2mqtt/living_room_trvzb/set/weekly_schedule_saturday');
+
+      // Payload should be a plain string (not JSON)
+      const mondayCall = calls.find(call => (call.data.topic as string).includes('monday'));
+      expect(typeof mondayCall?.data.payload).toBe('string');
+      expect(mondayCall?.data.payload).toContain('00:00/');
     });
 
     it('should show loading state during save', async () => {

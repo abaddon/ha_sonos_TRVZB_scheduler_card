@@ -36,13 +36,12 @@ src/
 
 ## TRVZB Schedule Format
 
-The device expects schedules in this MQTT format:
+The device expects schedules in this MQTT format (each day as a separate property):
 ```json
 {
-  "weekly_schedule": {
-    "sunday": "00:00/20 06:00/22 08:00/18 17:00/22 22:00/18",
-    "monday": "00:00/20 06:00/22 08:00/18 17:00/22 22:00/18"
-  }
+  "weekly_schedule_sunday": "00:00/20 06:00/22 08:00/18 17:00/22 22:00/18",
+  "weekly_schedule_monday": "00:00/20 06:00/22 08:00/18 17:00/22 22:00/18",
+  "weekly_schedule_tuesday": "00:00/20 06:00/22 08:00/18 17:00/22 22:00/18"
 }
 ```
 
@@ -79,11 +78,14 @@ const mondaySchedule = hass.states['text.living_room_trvzb_weekly_schedule_monda
 ```
 
 ### Writing Schedule
+Each day is published to its own topic:
 ```javascript
+// For each day, publish to: zigbee2mqtt/DEVICE_NAME/set/weekly_schedule_{day}
 hass.callService('mqtt', 'publish', {
-  topic: 'zigbee2mqtt/DEVICE_NAME/set',
-  payload: JSON.stringify({ weekly_schedule: scheduleData })
+  topic: 'zigbee2mqtt/DEVICE_NAME/set/weekly_schedule_monday',
+  payload: '00:00/18 06:00/21 08:00/19 17:00/22 22:00/18'
 });
+// Repeat for each day of the week
 ```
 
 ## Usage

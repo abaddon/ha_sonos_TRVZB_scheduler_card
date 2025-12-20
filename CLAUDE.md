@@ -70,11 +70,11 @@ Each day's schedule is a space-separated string of transitions in `HH:mm/tempera
 ## Home Assistant Integration
 
 ### Reading Schedule
-Schedule is read from 7 separate day sensor entities:
+Schedule is read from 7 separate day text entities:
 ```javascript
-// Each day has its own sensor: sensor.{device}_weekly_schedule_{day}
-const sundaySchedule = hass.states['sensor.living_room_trvzb_weekly_schedule_sunday'].state;
-const mondaySchedule = hass.states['sensor.living_room_trvzb_weekly_schedule_monday'].state;
+// Each day has its own text entity: text.{device}_weekly_schedule_{day}
+const sundaySchedule = hass.states['text.living_room_trvzb_weekly_schedule_sunday'].state;
+const mondaySchedule = hass.states['text.living_room_trvzb_weekly_schedule_monday'].state;
 // ... etc for each day
 ```
 

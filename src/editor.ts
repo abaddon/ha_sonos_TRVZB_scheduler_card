@@ -276,11 +276,11 @@ export class TRVZBSchedulerCardEditor extends LitElement {
             class="editor-input"
             .value=${this._config.schedule_sensor || ''}
             @input=${this._scheduleSensorChanged}
-            placeholder="sensor.device_weekly_schedule"
+            placeholder="text.device_weekly_schedule"
           />
           <div class="editor-description">
-            Override the schedule sensor entity. By default, the card derives it from the
-            climate entity (e.g., climate.device → sensor.device_weekly_schedule).
+            Override the schedule text entity. By default, the card derives it from the
+            climate entity (e.g., climate.device → text.device_weekly_schedule).
           </div>
         </div>
       </div>

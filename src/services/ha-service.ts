@@ -52,30 +52,30 @@ export interface EntityInfo {
 }
 
 /**
- * Derive a day-specific schedule sensor entity ID from a climate entity ID
- * New convention: climate.device_name -> sensor.device_name_weekly_schedule_<day>
+ * Derive a day-specific schedule text entity ID from a climate entity ID
+ * New convention: climate.device_name -> text.device_name_weekly_schedule_<day>
  *
  * @param climateEntityId - Climate entity ID (e.g., "climate.living_room_trvzb")
  * @param day - Day of week (e.g., "monday")
- * @returns Sensor entity ID (e.g., "sensor.living_room_trvzb_weekly_schedule_monday")
+ * @returns Text entity ID (e.g., "text.living_room_trvzb_weekly_schedule_monday")
  */
 export function deriveDaySensorEntityId(climateEntityId: string, day: DayOfWeek): string {
   const deviceName = extractFriendlyName(climateEntityId);
-  return `sensor.${deviceName}_weekly_schedule_${day}`;
+  return `text.${deviceName}_weekly_schedule_${day}`;
 }
 
 /**
- * Derive the schedule sensor entity ID from a climate entity ID
- * @deprecated Use deriveDaySensorEntityId instead - schedule is now split across 7 sensors
- * Convention: climate.device_name -> sensor.device_name_weekly_schedule
+ * Derive the schedule text entity ID from a climate entity ID
+ * @deprecated Use deriveDaySensorEntityId instead - schedule is now split across 7 text entities
+ * Convention: climate.device_name -> text.device_name_weekly_schedule
  *
  * @param climateEntityId - Climate entity ID (e.g., "climate.living_room_trvzb")
- * @returns Sensor entity ID (e.g., "sensor.living_room_trvzb_weekly_schedule")
+ * @returns Text entity ID (e.g., "text.living_room_trvzb_weekly_schedule")
  */
 export function deriveSensorEntityId(climateEntityId: string): string {
   const deviceName = extractFriendlyName(climateEntityId);
 
-  return `sensor.${deviceName}_weekly_schedule`;
+  return `text.${deviceName}_weekly_schedule`;
 }
 
 /**
@@ -91,8 +91,8 @@ export function getSensorEntityId(climateEntityId: string, configuredSensor?: st
 }
 
 /**
- * Get the weekly schedule from 7 separate day sensor entities
- * Reads from the state of each sensor.{device}_weekly_schedule_{day}
+ * Get the weekly schedule from 7 separate day text entities
+ * Reads from the state of each text.{device}_weekly_schedule_{day}
  *
  * @param hass - Home Assistant instance
  * @param climateEntityId - Climate entity ID (e.g., "climate.living_room_trvzb")

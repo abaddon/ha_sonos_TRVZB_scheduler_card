@@ -252,19 +252,19 @@ export function createMockTRVZBEntity(
 }
 
 /**
- * Create a mock weekly_scheduler sensor entity (deprecated - kept for backwards compatibility)
- * @deprecated Use createMockDaySensors instead - schedule is now split across 7 sensors
- * This sensor contains the schedule attribute that the card reads from
+ * Create a mock weekly_scheduler text entity (deprecated - kept for backwards compatibility)
+ * @deprecated Use createMockDaySensors instead - schedule is now split across 7 text entities
+ * This text entity contains the schedule attribute that the card reads from
  *
- * @param friendlyName - The base name for the entity (will create sensor.{name}_weekly_schedule)
+ * @param friendlyName - The base name for the entity (will create text.{name}_weekly_schedule)
  * @param schedule - Optional weekly schedule (uses sample schedule if not provided)
- * @returns Mock HassEntity for the sensor
+ * @returns Mock HassEntity for the text entity
  */
 export function createMockScheduleSensor(
   friendlyName: string = "living_room_trvzb",
   schedule?: MQTTWeeklySchedule
 ): HassEntity {
-  const sensorEntityId = `sensor.${friendlyName}_weekly_schedule`;
+  const sensorEntityId = `text.${friendlyName}_weekly_schedule`;
   const scheduleAttribute = schedule || SAMPLE_WEEKLY_SCHEDULE;
 
   return {
@@ -278,12 +278,12 @@ export function createMockScheduleSensor(
 }
 
 /**
- * Create mock day-specific sensor entities for the new sensor structure
- * Creates 7 sensors: sensor.{name}_weekly_schedule_{day}
+ * Create mock day-specific text entities for the new entity structure
+ * Creates 7 text entities: text.{name}_weekly_schedule_{day}
  *
  * @param friendlyName - The base name for the entity
  * @param schedule - Optional weekly schedule (uses sample schedule if not provided)
- * @returns Record of sensor entity IDs to HassEntity objects
+ * @returns Record of text entity IDs to HassEntity objects
  */
 export function createMockDaySensors(
   friendlyName: string = "living_room_trvzb",
@@ -297,7 +297,7 @@ export function createMockDaySensors(
   const sensors: Record<string, HassEntity> = {};
 
   for (const day of days) {
-    const sensorEntityId = `sensor.${friendlyName}_weekly_schedule_${day}`;
+    const sensorEntityId = `text.${friendlyName}_weekly_schedule_${day}`;
     const dayScheduleString = scheduleData[day];
 
     sensors[sensorEntityId] = {

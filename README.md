@@ -280,9 +280,9 @@ src/
 
 ### Schedule Not Loading
 
-1. The schedule is read from 7 separate day sensor entities (e.g., `sensor.device_name_weekly_schedule_monday`)
-2. Ensure Zigbee2MQTT is exposing the weekly schedule sensors (requires Z2M with PR #30226)
-3. Check if all 7 day sensors exist in Developer Tools → States
+1. The schedule is read from 7 separate day text entities (e.g., `text.device_name_weekly_schedule_monday`)
+2. Ensure Zigbee2MQTT is exposing the weekly schedule text entities
+3. Check if all 7 day text entities exist in Developer Tools → States
 4. Try requesting the schedule manually: publish to `zigbee2mqtt/DEVICE_NAME/get` with payload `{"weekly_schedule":""}`
 
 ### HACS Installation Issues

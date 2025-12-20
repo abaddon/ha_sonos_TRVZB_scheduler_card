@@ -157,7 +157,7 @@ describe('TRVZBSchedulerCard - Integration Tests', () => {
       const daySensorStates: Record<string, any> = {};
 
       for (const day of days) {
-        const daySensorId = `sensor.${entityName}_weekly_schedule_${day}`;
+        const daySensorId = `text.${entityName}_weekly_schedule_${day}`;
         daySensorStates[daySensorId] = {
           entity_id: daySensorId,
           state: 'unavailable',

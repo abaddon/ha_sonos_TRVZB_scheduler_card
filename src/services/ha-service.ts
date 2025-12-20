@@ -184,6 +184,7 @@ export function getEntitySchedule(hass: HomeAssistant, entityId: string): Weekly
 
 /**
  * Save a weekly schedule to the device via MQTT
+ * Each day is published to its own topic: zigbee2mqtt/{device}/set/weekly_schedule_{day}
  *
  * @param hass - Home Assistant instance
  * @param entityId - Climate entity ID
@@ -202,19 +203,17 @@ export async function saveSchedule(
     // Serialize the schedule to MQTT format
     const mqttSchedule = serializeWeeklySchedule(schedule);
 
-    // Construct the MQTT topic
-    const topic = `zigbee2mqtt/${friendlyName}/set`;
+    // Publish each day to its own topic
+    // Format: zigbee2mqtt/{device}/set/weekly_schedule_{day}
+    for (const day of DAYS_OF_WEEK) {
+      const topic = `zigbee2mqtt/${friendlyName}/set/weekly_schedule_${day}`;
+      const payload = mqttSchedule[day];
 
-    // Prepare the payload
-    const payload = JSON.stringify({
-      weekly_schedule: mqttSchedule
-    });
-
-    // Call mqtt.publish service
-    await hass.callService('mqtt', 'publish', {
-      topic: topic,
-      payload: payload
-    });
+      await hass.callService('mqtt', 'publish', {
+        topic: topic,
+        payload: payload
+      });
+    }
   } catch (error) {
     console.error(`Error saving schedule for ${entityId}:`, error);
     throw new Error(`Failed to save schedule: ${error instanceof Error ? error.message : 'Unknown error'}`);
